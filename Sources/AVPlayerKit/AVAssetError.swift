@@ -27,15 +27,15 @@ extension AVAssetError: LocalizedError {
      Текстовое представление ошибки медиа источника.
      */
     public var errorDescription: String? {
-        let errorDescription: String?
+        let description: String?
         switch self {
         case .isNotPlayable:
-            errorDescription = "Контент не поддерживает проигрывание."
+            description = "Контент не поддерживает проигрывание."
         case .hasProtectedContent:
-            errorDescription = "Контент защищен от проигрывания."
+            description = "Контент защищен от проигрывания."
         }
         
-        return errorDescription
+        return description
     }
     
     
