@@ -1,0 +1,95 @@
+//
+//  NSObjectObserver.swift
+//
+
+import Foundation
+
+/**
+ Наблюдатель за свойствами объекта.
+ 
+ Наблюдатель держит сильную ссылку на объект.
+ 
+ Является синтаксическим сахаром для метода
+ [observe(_:options:changeHandler:)](https://developer.apple.com/documentation/swift/using-key-value-observing-in-swift).
+ 
+ Пример использования:
+ ```swift
+ import AVFoundation
+ 
+ let playerObserver = NSObjectObserver(object: PLAYER)
+ playerObserver.startObserving(\.timeControlStatus) { player, _ in
+    // Обработать изменение состояния плеера.
+    ...
+ }
+ ```
+ */
+final class NSObjectObserver<Object: NSObject> {
+    /**
+     Объект наблюдения.
+     */
+    let object: Object
+    /**
+     Ссылки наблюдателя за объектом.
+     */
+    private var tokens = [Int : NSKeyValueObservation]()
+    
+    /**
+     Создать наблюдателя за объектом.
+     - Parameter object: Объект наблюдения.
+     */
+    init(object: Object) {
+        self.object = object
+    }
+    
+    /**
+     Установить наблюдателя для конкретного ключа.
+     
+     - Note: Ключ должен поддерживать механизм наблюдения с помощью
+     [KVO](https://developer.apple.com/documentation/swift/using-key-value-observing-in-swift).
+     
+     - Parameter keyPath: Ключевой путь для которого устанавливается наблюдение.
+     - Parameter options: Значения, которые могут быть возвращены в словаре изменений.
+     - Parameter changeHandler: Блок, вызываемый при изменении значения.
+     
+     Пример использования:
+     ```swift
+     import AVFoundation
+     
+     let playerObserver = NSObjectObserver(object: PLAYER)
+     playerObserver.startObserving(\.timeControlStatus) { player, _ in
+        // Обработать изменение состояния плеера.
+        ...
+     }
+     */
+    func startObserving<Value>(
+        _ keyPath: KeyPath<Object, Value>,
+        options: NSKeyValueObservingOptions = [],
+        changeHandler: @escaping (Object, NSKeyValueObservedChange<Value>) -> Void)
+    {
+        self.stopObserving(keyPath)
+        let token = self.object.observe(keyPath, options: options, changeHandler: changeHandler)
+        self.tokens[keyPath.hashValue] = token
+    }
+    /**
+     Удалить наблюдателя для конкретного ключа.
+     - Parameter keyPath: Ключевой путь от корневого типа к типу результирующего значения.
+     */
+    func stopObserving<Value>(_ keyPath: KeyPath<Object, Value>) {
+        if let token = self.tokens.removeValue(forKey: keyPath.hashValue) {
+            token.invalidate()
+        }
+    }
+    /**
+     Удалить наблюдателя для всех ключей.
+     */
+    func invalidate() {
+        self.tokens.values.forEach { $0.invalidate() }
+        self.tokens = [:]
+    }
+    
+    deinit {
+        self.invalidate()
+    }
+    
+    
+}
