@@ -21,6 +21,8 @@ open class PlayerViewController: UIViewController {
     public private(set) weak var playerView: PlayerView!
     
     private var playerToken: NSKeyValueObservation?
+    private var playerObserver: NSObjectObserver<AVPlayer>?
+    private var playerItemObserver: NSObjectObserver<AVPlayerItem>?
     /**
      Наблюдатель зависаний плеера.
      */
@@ -44,11 +46,64 @@ open class PlayerViewController: UIViewController {
         
         self.playerToken = self.playerView.observe(\.player) { [unowned self] playerView, _ in
             if let player = playerView.player {
+                self.playerObserver = NSObjectObserver(object: player)
+                self.startPlayerStatusObserving(player: player)
+                if let playerItem = player.currentItem {
+                    self.startPlayerItemStatusObserving(playerItem: playerItem)
+                } else {
+                    self.startPlayerItemObserving(player: player)
+                }
                 self.startPlayerStallsObserving(player: player)
             } else {
+                self.playerItemObserver?.invalidate()
+                self.playerItemObserver = nil
+                self.playerObserver?.invalidate()
+                self.playerObserver = nil
                 self.playerStallsObserver = nil
             }
         }
+    }
+    
+    private func startPlayerStatusObserving(player: AVPlayer) {
+        self.playerObserver?.startObserving(\.status) { [unowned self] player, _ in
+            if player.status == .failed {
+                self.showPlayerError(player.error)
+            } else {
+                self.hidePlayerError()
+            }
+        }
+    }
+    
+    private func startPlayerItemObserving(player: AVPlayer) {
+        self.playerObserver?.startObserving(\.currentItem) { [unowned self] player, _ in
+            if let playerItem = player.currentItem {
+                self.startPlayerItemStatusObserving(playerItem: playerItem)
+            } else {
+                self.playerItemObserver?.invalidate()
+                self.playerItemObserver = nil
+            }
+        }
+    }
+    
+    private func startPlayerItemStatusObserving(playerItem: AVPlayerItem) {
+        self.playerItemObserver = NSObjectObserver(object: playerItem)
+        self.playerItemObserver?.startObserving(\.status) { [unowned self] playerItem, _ in
+            if playerItem.status == .failed {
+                self.showPlayerError(playerItem.error)
+            } else {
+                self.hidePlayerError()
+            }
+        }
+    }
+    
+    private func showPlayerError(_ error: Error?) {
+        self.playerView.infoLabel.text = error?.localizedDescription ?? "Неизвестная ошибка"
+        self.playerView.infoLabel.isHidden = false
+    }
+    
+    private func hidePlayerError() {
+        self.playerView.infoLabel.text = nil
+        self.playerView.infoLabel.isHidden = true
     }
     
     private func startPlayerStallsObserving(player: AVPlayer) {
@@ -67,6 +122,7 @@ open class PlayerViewController: UIViewController {
     }
     
     deinit {
+        self.playerObserver?.invalidate()
         self.playerToken?.invalidate()
     }
     
