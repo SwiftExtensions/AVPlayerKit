@@ -3,7 +3,7 @@
 //  
 
 import UIKit
-import AVFoundation
+import AVKit
 
 /**
  Подкласс
@@ -27,6 +27,17 @@ open class PlayerView: UIView {
     public override class var layerClass: AnyClass {
         AVPlayerLayer.self
     }
+    /**
+     A view that presents a list of nearby media receivers.
+     */
+    public var routePickerView: AVRoutePickerView = {
+        let view = AVRoutePickerView()
+        view.backgroundColor = .black.withAlphaComponent(0.65)
+        view.tintColor = .white
+        view.layer.cornerRadius = 8.0
+        
+        return view
+    }()
     
     public var loadingIndicator: UIActivityIndicatorView = {
         let indicator: UIActivityIndicatorView
@@ -76,11 +87,19 @@ open class PlayerView: UIView {
     }
     
     private func initialSetup() {
-        [self.loadingIndicator, self.infoLabel].forEach {
+        [self.routePickerView, self.loadingIndicator, self.infoLabel].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             self.addSubview($0)
         }
         NSLayoutConstraint.activate([
+            self.routePickerView.widthAnchor.constraint(equalTo: self.routePickerView.heightAnchor),
+            self.routePickerView.leftAnchor.constraint(
+                equalTo: self.safeAreaLayoutGuide.leftAnchor,
+                constant: 8.0),
+            self.routePickerView.topAnchor.constraint(
+                equalTo: self.safeAreaLayoutGuide.topAnchor,
+                constant: 8.0),
+            
             self.loadingIndicator.centerXAnchor.constraint(equalTo: self.centerXAnchor),
             self.loadingIndicator.centerYAnchor.constraint(equalTo: self.centerYAnchor),
             

@@ -46,14 +46,7 @@ open class PlayerViewController: UIViewController {
         
         self.playerToken = self.playerView.observe(\.player) { [unowned self] playerView, _ in
             if let player = playerView.player {
-                self.playerObserver = NSObjectObserver(object: player)
-                self.startPlayerStatusObserving(player: player)
-                if let playerItem = player.currentItem {
-                    self.startPlayerItemStatusObserving(playerItem: playerItem)
-                } else {
-                    self.startPlayerItemObserving(player: player)
-                }
-                self.startPlayerStallsObserving(player: player)
+                self.handlePlayerUpdate(player: player)
             } else {
                 self.playerItemObserver?.invalidate()
                 self.playerItemObserver = nil
@@ -64,18 +57,51 @@ open class PlayerViewController: UIViewController {
         }
     }
     
-    private func startPlayerStatusObserving(player: AVPlayer) {
-        self.playerObserver?.startObserving(\.status) { [unowned self] player, _ in
+    private func handlePlayerUpdate(player: AVPlayer) {
+        let playerObserver = NSObjectObserver(object: player)
+        self.playerObserver = playerObserver
+        self.startPlayerStatusObserving(observer: playerObserver)
+        self.startExternalPlaybackObserving(observer: playerObserver)
+        if let playerItem = player.currentItem {
+            self.startPlayerItemStatusObserving(playerItem: playerItem)
+        } else {
+            self.startPlayerItemObserving(observer: playerObserver)
+        }
+        self.startPlayerStallsObserving(player: player)
+    }
+    
+    private func startPlayerStatusObserving(observer: NSObjectObserver<AVPlayer>) {
+        observer.startObserving(\.status) { [unowned self] player, _ in
             if player.status == .failed {
-                self.showPlayerError(player.error)
+                let message = player.error?.localizedDescription ?? "Неизвестная ошибка."
+                self.showPlayerInfo(message)
             } else {
-                self.hidePlayerError()
+                self.hidePlayerInfo()
             }
         }
     }
     
-    private func startPlayerItemObserving(player: AVPlayer) {
-        self.playerObserver?.startObserving(\.currentItem) { [unowned self] player, _ in
+    private func startExternalPlaybackObserving(observer: NSObjectObserver<AVPlayer>) {
+        observer.startObserving(\.isExternalPlaybackActive) { [unowned self] player, _ in
+            self.handleExternalPlaybackStateUpdate(
+                isExternalPlaybackActive: player.isExternalPlaybackActive
+            )
+        }
+    }
+    
+    private func handleExternalPlaybackStateUpdate(isExternalPlaybackActive: Bool) {
+        if isExternalPlaybackActive {
+            let route = AVAudioSession.sharedInstance().currentRoute
+            let deviceName = route.outputs.first?.portName ?? "(не определено)"
+            let message = "Идет трансляция на внешнем устройстройстве: \(deviceName)."
+            self.showPlayerInfo(message)
+        } else {
+            self.hidePlayerInfo()
+        }
+    }
+    
+    private func startPlayerItemObserving(observer: NSObjectObserver<AVPlayer>) {
+        observer.startObserving(\.currentItem) { [unowned self] player, _ in
             if let playerItem = player.currentItem {
                 self.startPlayerItemStatusObserving(playerItem: playerItem)
             } else {
@@ -89,19 +115,20 @@ open class PlayerViewController: UIViewController {
         self.playerItemObserver = NSObjectObserver(object: playerItem)
         self.playerItemObserver?.startObserving(\.status) { [unowned self] playerItem, _ in
             if playerItem.status == .failed {
-                self.showPlayerError(playerItem.error)
+                let message = playerItem.error?.localizedDescription ?? "Неизвестная ошибка"
+                self.showPlayerInfo(message)
             } else {
-                self.hidePlayerError()
+                self.hidePlayerInfo()
             }
         }
     }
     
-    private func showPlayerError(_ error: Error?) {
-        self.playerView.infoLabel.text = error?.localizedDescription ?? "Неизвестная ошибка"
+    private func showPlayerInfo(_ message: String) {
+        self.playerView.infoLabel.text = message
         self.playerView.infoLabel.isHidden = false
     }
     
-    private func hidePlayerError() {
+    private func hidePlayerInfo() {
         self.playerView.infoLabel.text = nil
         self.playerView.infoLabel.isHidden = true
     }
