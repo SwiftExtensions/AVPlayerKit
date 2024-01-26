@@ -55,18 +55,19 @@ open class PlayerView: UIView {
         let label = EdgeInsetsLabel()
         if #available(iOS 13.0, *) {
             label.textColor = .systemBackground
-            label.backgroundColor = .label.withAlphaComponent(0.3)
+            label.backgroundColor = .label
         } else {
             label.textColor = .white
-            label.backgroundColor = .black.withAlphaComponent(0.3)
+            label.backgroundColor = .black
         }
         label.layer.cornerRadius = 8.0
+        label.layer.masksToBounds = true
         label.numberOfLines = 0
         label.insets = UIEdgeInsets(
-            top: 0.0,
-            left: 5.0,
-            bottom: 0.0,
-            right: 5.0
+            top: 4.0,
+            left: 6.0,
+            bottom: 4.0,
+            right: 6.0
         )
         label.font = .preferredFont(forTextStyle: .footnote)
         label.textAlignment = .center
