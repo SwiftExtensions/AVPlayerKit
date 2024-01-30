@@ -23,11 +23,11 @@ import Foundation
  }
  ```
  */
-final class NSObjectObserver<Object: NSObject> {
+public class NSObjectObserver<Object: NSObject> {
     /**
      Объект наблюдения.
      */
-    let object: Object
+    public let object: Object
     /**
      Ссылки наблюдателя за объектом.
      */
@@ -37,7 +37,7 @@ final class NSObjectObserver<Object: NSObject> {
      Создать наблюдателя за объектом.
      - Parameter object: Объект наблюдения.
      */
-    init(object: Object) {
+    public init(object: Object) {
         self.object = object
     }
     
@@ -61,7 +61,7 @@ final class NSObjectObserver<Object: NSObject> {
         ...
      }
      */
-    func startObserving<Value>(
+    public func startObserving<Value>(
         _ keyPath: KeyPath<Object, Value>,
         options: NSKeyValueObservingOptions = [],
         changeHandler: @escaping (Object, NSKeyValueObservedChange<Value>) -> Void)
@@ -74,7 +74,7 @@ final class NSObjectObserver<Object: NSObject> {
      Удалить наблюдателя для конкретного ключа.
      - Parameter keyPath: Ключевой путь от корневого типа к типу результирующего значения.
      */
-    func stopObserving<Value>(_ keyPath: KeyPath<Object, Value>) {
+    public func stopObserving<Value>(_ keyPath: KeyPath<Object, Value>) {
         if let token = self.tokens.removeValue(forKey: keyPath.hashValue) {
             token.invalidate()
         }
@@ -82,7 +82,7 @@ final class NSObjectObserver<Object: NSObject> {
     /**
      Удалить наблюдателя для всех ключей.
      */
-    func invalidate() {
+    public func invalidate() {
         self.tokens.values.forEach { $0.invalidate() }
         self.tokens = [:]
     }
