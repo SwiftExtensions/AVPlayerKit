@@ -6,6 +6,16 @@ import MediaPlayer
 
 /**
  Класс для дистанционного управления командами плеера.
+ 
+ Пример использования:
+ ```swift
+ let remoteCommandCenter = RemoteCommandCenter()
+ remoteCommandCenter.addAction(\.playCommand) { event in
+    // Обработать событие полученное от внешнего медиа плеера.
+    ...
+    return .success
+ }
+ ```
  */
 public class RemoteCommandCenter {
     /**
@@ -48,6 +58,16 @@ public class RemoteCommandCenter {
      Добавить действие дистанционного управления плеером для указанной команды.
      - Parameter keyPath: Ключевой путь для команды.
      - Parameter action: Блок, вызываемый при выполнении команды.
+     
+     Пример использования:
+     ```swift
+     let remoteCommandCenter = RemoteCommandCenter()
+     remoteCommandCenter.addAction(\.playCommand) { event in
+        // Обработать событие полученное от внешнего медиа плеера.
+        ...
+        return .success
+     }
+     ```
      */
     public func addAction(
         to keyPath: KeyPath<MPRemoteCommandCenter, MPRemoteCommand>,
@@ -63,6 +83,18 @@ public class RemoteCommandCenter {
     /**
      Удалить действие дистанционного управления плеером для указанной команды.
      - Parameter keyPath: Ключевой путь для команды.
+     
+     Пример использования:
+    ``` swift
+     let remoteCommandCenter = RemoteCommandCenter()
+     remoteCommandCenter.addAction(\.playCommand) { event in
+        // Обработать событие полученное от внешнего медиа плеера.
+        ...
+        return .success
+     }
+     ...
+     remoteCommandCenter.removeAction(\.playCommand)
+     ```
      */
     public func removeAction(
         from keyPath: KeyPath<MPRemoteCommandCenter, MPRemoteCommand>
