@@ -9,7 +9,6 @@ public extension AVPlayer {
      Создает новый проигрыватель для воспроизведения одного аудиовизуального ресурса,
      на который ссылается строковое значение URL-адреса.
      - Parameter urlString: Строковое значение URL-адреса, идентифицирующее аудиовизуальный ресурс.
-     - Returns: Новый экземпляр проигрывателя, инициализированный для воспроизведения аудиовизуального ресурса, указанного в URL.
      */
     convenience init?(urlString: String) {
         if let url = URL(string: urlString) {
@@ -27,9 +26,12 @@ public extension AVPlayer {
      
      - Parameter url: URL  указывающий на медиа ресурс для воспроизведения.
      */
-    func replaceCurrentItem(with url: URL) {
+    @discardableResult
+    func replaceCurrentItem(with url: URL) -> AVPlayerItem {
         let playerItem = AVPlayerItem(url: url)
         self.replaceCurrentItem(with: playerItem)
+        
+        return playerItem
     }
     /**
      Заменять текущий элемент воспрозведениям новым,
@@ -43,10 +45,14 @@ public extension AVPlayer {
      
      - Parameter urlString: URL указывающий на медиа ресурс для воспроизведения.
      */
-    func replaceCurrentItem(with urlString: String) {
+    @discardableResult
+    func replaceCurrentItem(with urlString: String) -> AVPlayerItem? {
+        var playerItem: AVPlayerItem?
         if let url = URL(string: urlString) {
-            self.replaceCurrentItem(with: url)
+            playerItem = self.replaceCurrentItem(with: url)
         }
+        
+        return playerItem
     }
     
     
