@@ -40,6 +40,8 @@ public extension AVAsset {
             print(error)
          }
      }
+     // При необходимости отмены запроса
+     asset.cancelLoading()
      ```
      */
     func validate(completion: @escaping Completion) {
