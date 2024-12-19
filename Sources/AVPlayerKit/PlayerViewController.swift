@@ -19,6 +19,10 @@ open class PlayerViewController: UIViewController {
      [Creating a Movie Player App with Basic Playback Controls](https://developer.apple.com/documentation/avfoundation/media_playback_and_selection/creating_a_movie_player_app_with_basic_playback_controls).
      */
     public private(set) weak var playerView: PlayerView!
+    /**
+     Представление с элементами управления плеера.
+     */
+    public private(set) weak var controlsView: PlayerControlsView!
     
     private var playerToken: NSKeyValueObservation?
     private var playerObserver: NSObjectObserver<AVPlayer>?
@@ -39,6 +43,11 @@ open class PlayerViewController: UIViewController {
         self.playerView = playerView
         self.view.addSubview(playerView)
         playerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        
+        let controlsView = PlayerControlsView(frame: self.view.bounds)
+        self.controlsView = controlsView
+        self.view.addSubview(controlsView)
+        controlsView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     }
     
     open override func viewDidLoad() {
@@ -146,6 +155,10 @@ open class PlayerViewController: UIViewController {
         } else {
             self.playerView.loadingIndicator.stopAnimating()
         }
+    }
+    
+    public func enableRoutePickerView() {
+        self.controlsView.setupRoutePickerView()
     }
     
     deinit {
