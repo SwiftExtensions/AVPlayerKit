@@ -43,20 +43,17 @@ open class PlayerViewController: UIViewController {
         self.view = UIView()
         self.view.backgroundColor = .black
         
-        let playerView = PlayerView(frame: self.view.bounds)
+        let playerView = PlayerView()
         self.playerView = playerView
-        self.view.addSubview(playerView)
-        playerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        playerView.insert(into: self.view)
         
-        let statusView = PlayerStatusView(frame: self.view.bounds)
+        let statusView = PlayerStatusView()
         self.statusView = statusView
-        self.view.addSubview(statusView)
-        statusView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        statusView.insert(into: self.view)
         
-        let controlsView = PlayerControlsView(frame: self.view.bounds)
+        let controlsView = PlayerControlsView()
         self.controlsView = controlsView
-        self.view.addSubview(controlsView)
-        controlsView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+       controlsView.insert(into: self.view)
     }
     
     open override func viewDidLoad() {
