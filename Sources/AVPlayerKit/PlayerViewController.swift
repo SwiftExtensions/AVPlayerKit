@@ -20,6 +20,10 @@ open class PlayerViewController: UIViewController {
      */
     public private(set) weak var playerView: PlayerView!
     /**
+     Представление для отображения текущего состояния плеера.
+     */
+    public private(set) weak var statusView: PlayerStatusView!
+    /**
      Представление с элементами управления плеера.
      */
     public private(set) weak var controlsView: PlayerControlsView!
@@ -43,6 +47,11 @@ open class PlayerViewController: UIViewController {
         self.playerView = playerView
         self.view.addSubview(playerView)
         playerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        
+        let statusView = PlayerStatusView(frame: self.view.bounds)
+        self.statusView = statusView
+        self.view.addSubview(statusView)
+        statusView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         
         let controlsView = PlayerControlsView(frame: self.view.bounds)
         self.controlsView = controlsView
@@ -83,9 +92,9 @@ open class PlayerViewController: UIViewController {
         observer.startObserving(\.status) { [unowned self] player, _ in
             if player.status == .failed {
                 let message = player.error?.localizedDescription ?? "Неизвестная ошибка."
-                self.showPlayerInfo(message)
+                self.statusView.showStatusInfo(message)
             } else {
-                self.hidePlayerInfo()
+                self.statusView.hideStatusInfo()
             }
         }
     }
@@ -103,9 +112,9 @@ open class PlayerViewController: UIViewController {
             let route = AVAudioSession.sharedInstance().currentRoute
             let deviceName = route.outputs.first?.portName ?? "(не определено)"
             let message = "Идет трансляция на внешнем устройстройстве: \(deviceName)."
-            self.showPlayerInfo(message)
+            self.statusView.showStatusInfo(message)
         } else {
-            self.hidePlayerInfo()
+            self.statusView.hideStatusInfo()
         }
     }
     
@@ -125,21 +134,11 @@ open class PlayerViewController: UIViewController {
         self.playerItemObserver?.startObserving(\.status) { [unowned self] playerItem, _ in
             if playerItem.status == .failed {
                 let message = playerItem.error?.localizedDescription ?? "Неизвестная ошибка"
-                self.showPlayerInfo(message)
+                self.statusView.showStatusInfo(message)
             } else {
-                self.hidePlayerInfo()
+                self.statusView.hideStatusInfo()
             }
         }
-    }
-    
-    private func showPlayerInfo(_ message: String) {
-        self.playerView.infoLabel.text = message
-        self.playerView.infoLabel.isHidden = false
-    }
-    
-    private func hidePlayerInfo() {
-        self.playerView.infoLabel.text = nil
-        self.playerView.infoLabel.isHidden = true
     }
     
     private func startPlayerStallsObserving(player: AVPlayer) {
@@ -151,9 +150,9 @@ open class PlayerViewController: UIViewController {
     
     private func handlePlayerStallStateUpdate(_ isStalled: Bool) {
         if isStalled {
-            self.playerView.loadingIndicator.startAnimating()
+            self.statusView.startLoadingAnimation()
         } else {
-            self.playerView.loadingIndicator.stopAnimating()
+            self.statusView.stopLoadingAnimation()
         }
     }
     
