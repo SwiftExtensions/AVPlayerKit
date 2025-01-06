@@ -2,7 +2,7 @@
 //  PlayerView.swift
 //  
 
-import AVKit
+import AVFoundation
 import UIKit
 
 /**
@@ -15,6 +15,9 @@ import UIKit
  [Creating a Movie Player App with Basic Playback Controls](https://developer.apple.com/documentation/avfoundation/media_playback_and_selection/creating_a_movie_player_app_with_basic_playback_controls).
  */
 open class PlayerView: UIView {
+    /**
+     Плеер, визуальный контент которого отображает представление.
+     */
     @objc public dynamic var player: AVPlayer? {
         get { self.playerLayer.player }
         set { self.playerLayer.player = newValue }
