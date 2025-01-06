@@ -54,6 +54,14 @@ public extension AVPlayer {
         
         return playerItem
     }
+    /**
+     Удаляет текущий элемент воспроизведения.
+     */
+    @inlinable
+    @inline(__always)
+    func removeCurrentItem() {
+        self.replaceCurrentItem(with: nil)
+    }
     
     
 }
