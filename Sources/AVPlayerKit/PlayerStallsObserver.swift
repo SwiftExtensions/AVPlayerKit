@@ -11,8 +11,8 @@ import AVFoundation
  `delayTimeInterval`, значение по умолчанию 1.0 с.
  При этом зависания менее 1 с не будут учитываться.
  */
-final class PlayerStallsObserver {
-    typealias ChangeHandler = (_ isStalled: Bool) -> Void
+public class PlayerStallsObserver {
+    public typealias ChangeHandler = (_ isStalled: Bool) -> Void
     
     private(set) var player: AVPlayer?
     private var playerWaitingToPlayToken: NSKeyValueObservation?
@@ -26,9 +26,12 @@ final class PlayerStallsObserver {
      Для имитации отсутствия зависаний плеера.
      Значение по умолчанию 1.0 с.
      */
-    var delayTimeInterval: TimeInterval = 1.0
+    public var delayTimeInterval: TimeInterval = 1.0
     
-    func startObserving(player: AVPlayer, changeHandler: @escaping (_ isStalled: Bool) -> Void) {
+    public func startObserving(
+        player: AVPlayer,
+        changeHandler: @escaping ChangeHandler
+    ) {
         self.player = player
         self.changeHandler = changeHandler
         if player.currentItem != nil {
