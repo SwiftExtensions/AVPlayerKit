@@ -28,6 +28,11 @@ public class PlayerStallsObserver {
      */
     public var delayTimeInterval: TimeInterval = 1.0
     
+    /**
+     Создать наблюдателя зависаний плеера.
+     */
+    public init() { }
+    
     public func startObserving(
         player: AVPlayer,
         changeHandler: @escaping ChangeHandler
