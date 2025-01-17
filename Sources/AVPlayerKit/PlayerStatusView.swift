@@ -68,12 +68,12 @@ public class PlayerStatusView: UIView {
             
             self.infoLabel.centerXAnchor.constraint(equalTo: self.centerXAnchor),
             self.infoLabel.centerYAnchor.constraint(equalTo: self.centerYAnchor),
-            self.infoLabel.widthAnchor.constraint(
-                lessThanOrEqualTo: self.safeAreaLayoutGuide.widthAnchor,
+            self.infoLabel.leadingAnchor.constraint(
+                lessThanOrEqualTo: self.leadingAnchor,
                 constant: -80.0
             ),
             self.infoLabel.heightAnchor.constraint(
-                lessThanOrEqualTo: self.safeAreaLayoutGuide.heightAnchor,
+                lessThanOrEqualTo: self.heightAnchor,
                 constant: -80.0
             ),
         ])
