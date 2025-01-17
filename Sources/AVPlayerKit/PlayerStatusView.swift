@@ -25,13 +25,8 @@ public class PlayerStatusView: UIView {
     
     public private(set) lazy var infoLabel: EdgeInsetsLabel = {
         let label = EdgeInsetsLabel()
-        if #available(iOS 13.0, *) {
-            label.textColor = .systemBackground
-            label.backgroundColor = .label
-        } else {
-            label.textColor = .white
-            label.backgroundColor = .black
-        }
+        label.textColor = .white
+        label.backgroundColor = .black
         label.layer.cornerRadius = 8.0
         label.layer.masksToBounds = true
         label.numberOfLines = 0
