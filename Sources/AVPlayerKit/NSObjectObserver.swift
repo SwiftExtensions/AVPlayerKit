@@ -84,6 +84,16 @@ public class NSObjectObserver<Object: NSObject> {
         }
     }
     /**
+     Удалить наблюдателя для конкретного токена.
+     - Parameter token: Токен наблюдения.
+     */
+    public func stopObserving(_ token: NSKeyValueObservation) {
+        token.invalidate()
+        if let key = self.tokens.first(where: { $1 == token })?.key {
+            self.tokens.removeValue(forKey: key)
+        }
+    }
+    /**
      Удалить наблюдателя для всех ключей.
      */
     public func invalidate() {
