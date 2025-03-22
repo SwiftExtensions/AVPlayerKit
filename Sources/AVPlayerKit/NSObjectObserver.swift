@@ -42,14 +42,15 @@ public class NSObjectObserver<Object: NSObject> {
     }
     
     /**
-     Установить наблюдателя для конкретного ключа.
+     Установить наблюдателя для конкретного свойства (_ключевого пути_) объекта.
      
-     - Note: Ключ должен поддерживать механизм наблюдения с помощью
+     - Note: Свойство (_ключевой путь_) должно поддерживать механизм наблюдения с помощью
      [KVO](https://developer.apple.com/documentation/swift/using-key-value-observing-in-swift).
      
-     - Parameter keyPath: Ключевой путь для которого устанавливается наблюдение.
+     - Parameter keyPath: Ключевой путь (_свойство_) для которого устанавливается наблюдение.
      - Parameter options: Значения, которые могут быть возвращены в словаре изменений.
      - Parameter changeHandler: Блок, вызываемый при изменении значения.
+     - Returns: Токен наблюдения.
      
      Пример использования:
      ```swift
@@ -61,17 +62,20 @@ public class NSObjectObserver<Object: NSObject> {
         ...
      }
      */
+    @discardableResult
     public func startObserving<Value>(
         _ keyPath: KeyPath<Object, Value>,
         options: NSKeyValueObservingOptions = [],
-        changeHandler: @escaping (Object, NSKeyValueObservedChange<Value>) -> Void)
-    {
+        changeHandler: @escaping (Object, NSKeyValueObservedChange<Value>) -> Void
+    ) -> NSKeyValueObservation {
         self.stopObserving(keyPath)
         let token = self.object.observe(keyPath, options: options, changeHandler: changeHandler)
         self.tokens[keyPath.hashValue] = token
+        
+        return token
     }
     /**
-     Удалить наблюдателя для конкретного ключа.
+     Удалить наблюдателя для конкретного свойства (_ключевого пути_) объекта.
      - Parameter keyPath: Ключевой путь от корневого типа к типу результирующего значения.
      */
     public func stopObserving<Value>(_ keyPath: KeyPath<Object, Value>) {
