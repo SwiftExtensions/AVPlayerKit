@@ -11,4 +11,15 @@ public extension AVPlayerItem {
         let asset = AVURLAsset(url: url, options: options)
         self.init(asset: asset)
     }
+    
+    @inlinable
+    @inline(__always)
+    /**
+     The accumulated duration, in seconds, of the media played.
+     */
+    func durationWatched() -> TimeInterval? {
+        self.accessLog()?.events.map(\.durationWatched).reduce(0, +)
+    }
+    
+    
 }
