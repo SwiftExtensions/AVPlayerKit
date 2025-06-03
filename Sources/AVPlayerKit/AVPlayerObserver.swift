@@ -9,7 +9,9 @@ import AVFoundation
  
  Наблюдатель держит сильную ссылку на плеер.
  */
-@available(*, deprecated, renamed: "NSObjectObserver", message: "Используйте более общий класс NSObjectObserver.")
+@available(*, deprecated,
+    renamed: "NSObjectObserver",
+    message: "Используйте более общий класс NSObjectObserver.")
 public class AVPlayerObserver {
     /**
      Плеер воспроизведения.
