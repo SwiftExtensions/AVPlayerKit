@@ -71,14 +71,29 @@ playerViewController.didMove(toParent: self)
 
 `PlayerViewController` автоматически отслеживает состояние `AVPlayer`, отображает ошибки и анимацию буферизации.
 
+## AVRoutePickerView
+
+![Демонстрация AVRoutePickerView](Images/av-route-picker-view-demo.gif)
+
+```swift
+import AVPlayerKit
+
+let playerViewController = PlayerViewController()
+playerViewController.enableRoutePickerView()
+```
+
+`AVRoutePickerView` автоматически отслеживает наличие нескольких доступных маршрутов воспроизведения и отображает список доступных маршрутов при необходимости.
+
 ## Интеграция с Now Playing
+
+![Демонстрация Now Playing](Images/now-playing-info-demo.gif)
 
 ```swift
 import MediaPlayer
 import AVPlayerKit
 
-var nowPlaying = NowPlayingInfoBuilder(title: "Episode 1", artist: "Podcast")
-nowPlaying.mediaType = .audio
+var nowPlaying = NowPlayingInfoBuilder(title: "AVPlayer Demo", artist: "Bridge TV")
+nowPlaying.mediaType = .video
 nowPlaying.setArtwork(UIImage(named: "cover"))
 
 MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlaying.build()
