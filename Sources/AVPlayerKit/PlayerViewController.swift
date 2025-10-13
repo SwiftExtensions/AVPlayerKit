@@ -8,6 +8,7 @@ import AVFoundation
 /**
  Контроллер представления в качестве представления которого используется ``PlayerView``.
  */
+@available(iOS 13.0, *)
 open class PlayerViewController: UIViewController {
     /**
      Подкласс
@@ -31,6 +32,8 @@ open class PlayerViewController: UIViewController {
     private var playerToken: NSKeyValueObservation?
     private var playerObserver: NSObjectObserver<AVPlayer>?
     private var playerItemObserver: NSObjectObserver<AVPlayerItem>?
+    
+    private var routePickerController: AVRoutePickerController?
     /**
      Наблюдатель зависаний плеера.
      */
@@ -53,7 +56,7 @@ open class PlayerViewController: UIViewController {
         
         let controlsView = PlayerControlsView()
         self.controlsView = controlsView
-       controlsView.insert(into: self.view)
+        controlsView.insert(into: self.view)
     }
     
     open override func viewDidLoad() {
@@ -155,6 +158,32 @@ open class PlayerViewController: UIViewController {
     
     public func enableRoutePickerView() {
         self.controlsView.setupRoutePickerView()
+        let routePickerController = AVRoutePickerController()
+        self.routePickerController = routePickerController
+        routePickerController.routePickerView = self.controlsView.routePickerView
+        routePickerController.addAction(
+            for: .willBeginPresentingRoutes
+        ) { [weak self, unowned routePickerController] pickerView in
+            if routePickerController.multipleRoutesDetected { return }
+            
+            let message: String
+            #if targetEnvironment(simulator)
+            message = """
+                Функция недоступна на симуляторе. 
+                Используйте реальное устройство.
+                """
+            #else
+            message = "Нет доступных устройоств."
+            #endif
+            let alert = UIAlertController(
+                title: "Внимание!",
+                message: message,
+                preferredStyle: .alert
+            )
+            let action = UIAlertAction(title: "Ок", style: .default)
+            alert.addAction(action)
+            self?.present(alert, animated: true)
+        }
     }
     
     deinit {

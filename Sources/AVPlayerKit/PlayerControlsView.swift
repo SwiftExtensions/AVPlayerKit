@@ -25,11 +25,15 @@ public class PlayerControlsView: UIView {
     }()
     
     func setupRoutePickerView() {
+        if self.subviews.contains(self.routePickerView) { return }
+        
         self.routePickerView.translatesAutoresizingMaskIntoConstraints = false
         self.addSubview(self.routePickerView)
         
         NSLayoutConstraint.activate([
-            self.routePickerView.widthAnchor.constraint(equalTo: self.routePickerView.heightAnchor),
+            self.routePickerView.widthAnchor.constraint(
+                equalTo: self.routePickerView.heightAnchor
+            ),
             self.routePickerView.leftAnchor.constraint(
                 equalTo: self.safeAreaLayoutGuide.leftAnchor,
                 constant: 8.0
