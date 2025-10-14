@@ -62,7 +62,9 @@ open class PlayerViewController: UIViewController {
     open override func viewDidLoad() {
         super.viewDidLoad()
         
-        self.playerToken = self.playerView.observe(\.player) { [unowned self] playerView, _ in
+        self.playerToken = self.playerView.observe(
+            \.player
+        ) { [unowned self] playerView, _ in
             if let player = playerView.player {
                 self.handlePlayerUpdate(player: player)
             } else {
@@ -187,6 +189,13 @@ open class PlayerViewController: UIViewController {
             alert.addAction(action)
             self?.present(alert, animated: true)
         }
+    }
+    /**
+     Включает режим «картинка-в-картинке».
+     Добавляет кнопку PiP в элементы управления плеера.
+     */
+    public func enablePiP() {
+        self.controlsView.setupPiPButton()
     }
     
     deinit {
