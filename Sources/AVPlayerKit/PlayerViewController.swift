@@ -3,13 +3,21 @@
 //
 
 import UIKit
-import AVFoundation
+import AVKit
 
 /**
  Контроллер представления в качестве представления которого используется ``PlayerView``.
  */
 @available(iOS 13.0, *)
 open class PlayerViewController: UIViewController {
+    /**
+     Делегат событий режима «картинка в картинке».
+     */
+    public weak var pipControllerDelegate: AVPictureInPictureControllerDelegate? {
+        didSet {
+            self.pipController?.delegate = self.pipControllerDelegate
+        }
+    }
     /**
      Подкласс
      [UIView](https://developer.apple.com/documentation/uikit/uiview)
@@ -206,6 +214,7 @@ open class PlayerViewController: UIViewController {
         let pipController = PictureInPictureController()
         self.pipController = pipController
         pipController.pipButton = self.controlsView.pipButton
+        pipController.delegate = self.pipControllerDelegate
         pipController.setupPictureInPicture(playerLayer: self.playerView.playerLayer)
     }
     

@@ -25,6 +25,14 @@ final class PictureInPictureController: NSObject {
         }
     }
     /**
+     Делегат, получающий события от `AVPictureInPictureController`.
+     */
+    weak var delegate: AVPictureInPictureControllerDelegate? {
+        didSet {
+            self.pipController?.delegate = self.delegate
+        }
+    }
+    /**
      Контроллер, управляющий воспроизведением в режиме PiP.
      */
     private var pipController: AVPictureInPictureController?
@@ -50,7 +58,6 @@ final class PictureInPictureController: NSObject {
         
         isEnabled = nil
         self.pipController = pipController
-        pipController.delegate = self
         self.pipPossibleObservation = pipController.observe(
             \AVPictureInPictureController.isPictureInPicturePossible,
              options: [.initial, .new]
@@ -64,46 +71,6 @@ final class PictureInPictureController: NSObject {
      */
     @objc private func startPictureInPicture(_ button: UIButton) {
         self.pipController?.startPictureInPicture()
-    }
-    
-    
-}
-
-// MARK: - AVPictureInPictureControllerDelegate
-
-@available(iOS 13.0, *)
-extension PictureInPictureController: AVPictureInPictureControllerDelegate {
-    func pictureInPictureController(
-        _ pictureInPictureController: AVPictureInPictureController,
-        restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void
-    ) {
-        
-    }
-    func pictureInPictureControllerWillStartPictureInPicture(
-        _ pictureInPictureController: AVPictureInPictureController
-    ) {
-        
-    }
-    func pictureInPictureControllerDidStartPictureInPicture(
-        _ pictureInPictureController: AVPictureInPictureController
-    ) {
-        
-    }
-    func pictureInPictureController(
-        _ pictureInPictureController: AVPictureInPictureController,
-        failedToStartPictureInPictureWithError error: any Error
-    ) {
-        
-    }
-    func pictureInPictureControllerWillStopPictureInPicture(
-        _ pictureInPictureController: AVPictureInPictureController
-    ) {
-        
-    }
-    func pictureInPictureControllerDidStopPictureInPicture(
-        _ pictureInPictureController: AVPictureInPictureController
-    ) {
-        
     }
     
     
