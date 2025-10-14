@@ -46,7 +46,7 @@ final class AVRoutePickerController: NSObject {
     /**
      Лениво создаваемое представление выбора маршрута.
      */
-    var routePickerView: AVRoutePickerView? {
+    weak var routePickerView: AVRoutePickerView? {
         didSet { self.routePickerView?.delegate = self }
     }
     
@@ -75,7 +75,6 @@ final class AVRoutePickerController: NSObject {
     
     
 }
-
 
 // MARK: - AVRoutePickerViewDelegate
 

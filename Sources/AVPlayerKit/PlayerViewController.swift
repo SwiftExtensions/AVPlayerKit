@@ -33,11 +33,18 @@ open class PlayerViewController: UIViewController {
     private var playerObserver: NSObjectObserver<AVPlayer>?
     private var playerItemObserver: NSObjectObserver<AVPlayerItem>?
     
-    private var routePickerController: AVRoutePickerController?
     /**
      Наблюдатель зависаний плеера.
      */
     private var playerStallsObserver: PlayerStallsObserver!
+    /**
+     Контроллер, управляющий выбором маршрута воспроизведения.
+     */
+    private var routePickerController: AVRoutePickerController?
+    /**
+     Контроллер режима «картинка в картинке».
+     */
+    private var pipController: PictureInPictureController?
     
     /**
      Создает ``PlayerView`` которым будет управлять контроллер.
@@ -196,6 +203,10 @@ open class PlayerViewController: UIViewController {
      */
     public func enablePiP() {
         self.controlsView.setupPiPButton()
+        let pipController = PictureInPictureController()
+        self.pipController = pipController
+        pipController.pipButton = self.controlsView.pipButton
+        pipController.setupPictureInPicture(playerLayer: self.playerView.playerLayer)
     }
     
     deinit {
