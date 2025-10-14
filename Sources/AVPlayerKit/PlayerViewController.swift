@@ -155,8 +155,11 @@ open class PlayerViewController: UIViewController {
             self.statusView.stopLoadingAnimation()
         }
     }
-    
-    public func enableRoutePickerView() {
+    /**
+     Включает поддержку AirPlay и отображение кнопки AirPlay.
+     Настраивает обработчики событий выбора маршрута.
+     */
+    public func enableAirPlay() {
         self.controlsView.setupRoutePickerView()
         let routePickerController = AVRoutePickerController()
         self.routePickerController = routePickerController
