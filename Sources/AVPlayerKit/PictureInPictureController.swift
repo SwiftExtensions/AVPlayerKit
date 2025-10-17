@@ -40,6 +40,10 @@ final class PictureInPictureController: NSObject {
      Наблюдатель за свойством `isPictureInPicturePossible`.
      */
     private var pipPossibleObservation: NSKeyValueObservation?
+    /**
+     Наблюдатель за свойством `isPictureInPictureActive`.
+     */
+    private var pipActiveObservation: NSKeyValueObservation?
 
     /**
      Подготавливает режим «картинка в картинке» для указанного слоя.
@@ -59,10 +63,17 @@ final class PictureInPictureController: NSObject {
         isEnabled = nil
         self.pipController = pipController
         self.pipPossibleObservation = pipController.observe(
-            \AVPictureInPictureController.isPictureInPicturePossible,
+            \.isPictureInPicturePossible,
              options: [.initial, .new]
-        ) { [weak self] _, change in
-            self?.pipButton?.isEnabled = change.newValue ?? false
+        ) { [weak self] pipController, _ in
+            self?.pipButton?.isEnabled = pipController.isPictureInPicturePossible
+        }
+        
+        self.pipActiveObservation = pipController.observe(
+            \.isPictureInPictureActive,
+            options: [.initial, .new]
+        ) { [weak self] pipController, _ in
+            self?.pipButton?.isHidden = pipController.isPictureInPictureActive
         }
     }
     /**
