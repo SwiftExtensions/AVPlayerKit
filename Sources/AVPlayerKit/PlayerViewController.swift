@@ -8,16 +8,18 @@ import AVKit
 /**
  Контроллер представления в качестве представления которого используется ``PlayerView``.
  */
-@available(iOS 13.0, *)
 open class PlayerViewController: UIViewController {
     /**
-     Делегат событий режима «картинка в картинке».
+     Источник данных для контроллера режима «картинка в картинке».
+     
+     Для управления восстановлением пользовательского интерфейса
+     при выходе из режима «картинка в картинке».
      */
-    public weak var pipControllerDelegate: AVPictureInPictureControllerDelegate? {
-        didSet {
-            self.pipController?.delegate = self.pipControllerDelegate
-        }
+    public weak var pictureInPictureControllerDataSource: AVPictureInPictureControllerDataSource? {
+        get { self.pipController?.dataSource }
+        set { self.pipController?.dataSource = newValue }
     }
+    
     /**
      Подкласс
      [UIView](https://developer.apple.com/documentation/uikit/uiview)
@@ -209,13 +211,21 @@ open class PlayerViewController: UIViewController {
      Включает режим «картинка-в-картинке».
      Добавляет кнопку PiP в элементы управления плеера.
      */
-    public func enablePiP() {
+    public func enablePictureInPicture() {
         self.controlsView.setupPiPButton()
         let pipController = PictureInPictureController()
         self.pipController = pipController
         pipController.pipButton = self.controlsView.pipButton
-        pipController.delegate = self.pipControllerDelegate
         pipController.setupPictureInPicture(playerLayer: self.playerView.playerLayer)
+    }
+    /**
+     Добавляет делегата для получения событий режима «картинка в картинке».
+     - Parameter delegate: Объект, реализующий `AVPictureInPictureControllerEventDelegate`.
+     */
+    public func setPictureInPictureControllerEventDelegate(
+        _ delegate: AVPictureInPictureControllerEventDelegate
+    ) {
+        self.pipController?.setDelegate(delegate)
     }
     
     deinit {
