@@ -13,6 +13,16 @@ import AVKit
 @available(iOS 13.0, *)
 final class PictureInPictureController: NSObject {
     /**
+     Источник данных для контроллера режима «картинка в картинке».
+     
+     Для управления восстановлением пользовательского интерфейса
+     при выходе из режима «картинка в картинке».
+     */
+    weak var dataSource: AVPictureInPictureControllerDataSource? {
+        get { self.delegateProxy.dataSource }
+        set { self.delegateProxy.dataSource = newValue }
+    }
+    /**
      Кнопка управления режимом «картинка в картинке».
      */
     weak var pipButton: UIButton? {
@@ -22,14 +32,6 @@ final class PictureInPictureController: NSObject {
                 action: #selector(startPictureInPicture(_:)),
                 for: .touchUpInside
             )
-        }
-    }
-    /**
-     Делегат, получающий события от `AVPictureInPictureController`.
-     */
-    weak var delegate: AVPictureInPictureControllerDelegate? {
-        didSet {
-            self.pipController?.delegate = self.delegate
         }
     }
     /**
@@ -44,6 +46,10 @@ final class PictureInPictureController: NSObject {
      Наблюдатель за свойством `isPictureInPictureActive`.
      */
     private var pipActiveObservation: NSKeyValueObservation?
+    /**
+     Прокси для обработки событий делегата `AVPictureInPictureController` и их ретрансляции подписчикам.
+     */
+    private let delegateProxy = AVPictureInPictureControllerDelegateProxy()
 
     /**
      Подготавливает режим «картинка в картинке» для указанного слоя.
@@ -62,6 +68,8 @@ final class PictureInPictureController: NSObject {
         
         isEnabled = nil
         self.pipController = pipController
+        self.pipController?.delegate = self.delegateProxy
+        self.delegateProxy.setDelegate(self)
         self.pipPossibleObservation = pipController.observe(
             \.isPictureInPicturePossible,
              options: [.initial, .new]
@@ -81,7 +89,39 @@ final class PictureInPictureController: NSObject {
      - Parameter button: Кнопка, инициирующая переход в PiP.
      */
     @objc private func startPictureInPicture(_ button: UIButton) {
+        button.isEnabled = false
         self.pipController?.startPictureInPicture()
+    }
+    /**
+     Добавляет делегата для получения событий режима «картинка в картинке».
+     - Parameter delegate: Объект, реализующий `AVPictureInPictureControllerEventDelegate`.
+     */
+    func setDelegate(_ delegate: AVPictureInPictureControllerEventDelegate) {
+        self.delegateProxy.setDelegate(delegate)
+    }
+    
+    
+}
+
+// MARK: - AVPictureInPictureControllerEventDelegate
+
+extension PictureInPictureController: AVPictureInPictureControllerEventDelegate {
+    func pictureInPictureController(
+        _ pictureInPictureController: AVPictureInPictureController,
+        event: AVPictureInPictureController.Event
+    ) {
+        switch event {
+        case .willStart:
+            break
+        case .didStart:
+            self.pipButton?.isEnabled = pictureInPictureController.isPictureInPicturePossible
+        case .failedToStart:
+            self.pipButton?.isEnabled = pictureInPictureController.isPictureInPicturePossible
+        case .willStop:
+            break
+        case .didStop:
+            break
+        }
     }
     
     
