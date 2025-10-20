@@ -30,7 +30,6 @@ public extension AVRoutePickerView {
 /**
  Обёртка над `AVRoutePickerView` с возможностью установки действий на события отображения маршрутов.
  */
-@available(iOS 13.0, *)
 final class AVRoutePickerController: NSObject {
     /**
      Тип блока, вызываемого при возникновении события `AVRoutePickerView`.
@@ -78,7 +77,6 @@ final class AVRoutePickerController: NSObject {
 
 // MARK: - AVRoutePickerViewDelegate
 
-@available(iOS 13.0, *)
 extension AVRoutePickerController: AVRoutePickerViewDelegate {
     /**
      Вызывается перед отображением списка маршрутов и выполняет зарегистрированное действие.

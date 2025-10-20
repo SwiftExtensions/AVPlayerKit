@@ -10,7 +10,6 @@ import AVKit
 /**
  Контроллер, управляющий режимом «картинка в картинке» для воспроизведения.
  */
-@available(iOS 13.0, *)
 final class PictureInPictureController: NSObject {
     /**
      Источник данных для контроллера режима «картинка в картинке».

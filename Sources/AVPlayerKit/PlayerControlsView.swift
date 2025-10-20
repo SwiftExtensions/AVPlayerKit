@@ -11,7 +11,6 @@ import UIKit
 /**
  Представление с элементами управления плеера.
  */
-@available(iOS 13.0, *)
 public class PlayerControlsView: UIView {
     /**
      Представление, отображающее список доступных медиаприёмников.
