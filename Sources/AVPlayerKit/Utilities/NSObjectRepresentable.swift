@@ -44,10 +44,6 @@ extension NSObject: NSObjectRepresentable {
  */
 extension Optional: NSObjectRepresentable where Wrapped: NSObject {
     /**
-     Тип-синоним для исходного опционального `NSObject`.
-     */
-    public typealias RawValue = Wrapped
-    /**
      Возвращает исходный опциональный `NSObject`.
      */
     public var rawValue: Wrapped? { self }
