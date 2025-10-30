@@ -135,13 +135,14 @@ public class NSObjectObserver<Object> where Object : NSObject {
         changeHandler: @escaping (Object, NSKeyValueObservedChange<Value>) -> Void
     ) {
         self.stopObserving(keyPath)
-        let token = self.object.rawValue?.observe(
+        
+        let keyPathID = ObjectIdentifier(keyPath)
+        self.tokens[keyPathID] = self.object?.observe(
             keyPath,
             options: options,
             changeHandler: changeHandler
         )
-        let keyPathID = ObjectIdentifier(keyPath)
-        self.tokens[keyPathID] = token
+        
         let observation: (Object) -> NSKeyValueObservation = { object in
             object.observe(keyPath, options: options, changeHandler: changeHandler)
         }
@@ -165,9 +166,7 @@ public class NSObjectObserver<Object> where Object : NSObject {
      */
     public func stopObserving<Value>(_ keyPath: KeyPath<Object, Value>) {
         let keyPathID = ObjectIdentifier(keyPath)
-        if let token = self.tokens.removeValue(forKey: keyPathID) {
-            token.invalidate()
-        }
+        self.tokens.removeValue(forKey: keyPathID)?.invalidate()
         self.observations.removeValue(forKey: keyPathID)
     }
     /**
@@ -211,16 +210,16 @@ public class NSObjectObserver<Object> where Object : NSObject {
         options: NSKeyValueObservingOptions = [],
         changeHandler: @escaping (Object, NSKeyValueObservedChange<Value>) -> Void
     ) {
-        guard let object = self.object.rawValue else { return }
-        
-        let token = object.observe(
+        let token = self.object?.observe(
             keyPath,
             options: options,
             changeHandler: changeHandler
         )
         let ownerID = ObjectIdentifier(observer)
         let keyPathID = ObjectIdentifier(keyPath)
-        self.groupedObservers[ownerID, default: [:]].updateValue(token, forKey: keyPathID)?.invalidate()
+        if let token {
+            self.groupedObservers[ownerID, default: [:]].updateValue(token, forKey: keyPathID)?.invalidate()
+        }
         
         let observation: (Object) -> NSKeyValueObservation = { object in
             object.observe(keyPath, options: options, changeHandler: changeHandler)
