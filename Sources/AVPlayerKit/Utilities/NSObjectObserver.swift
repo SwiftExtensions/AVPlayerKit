@@ -12,38 +12,12 @@ import Foundation
  Является синтаксическим сахаром для метода
  [observe(_:options:changeHandler:)](https://developer.apple.com/documentation/swift/using-key-value-observing-in-swift).
  
- ## Подходы к наблюдению
- 
- ### 1. Прямое наблюдение через `startObserving`
- **Используйте когда:**
- - Нужно наблюдать за одним свойством с возможностью замены обработчика
- - Наблюдение за свойством должно быть уникальным (один `keyPath` = один обработчик)
- - Автоматическое восстановление наблюдений при замене объекта
- 
- **Примеры:** Отслеживание состояния плеера, наблюдение за прогрессом.
- 
- ### 2. Групповое наблюдение через `addObserver`
- **Используйте когда:**
- - Компонент создает несколько наблюдений за разными свойствами
-   *(например, менеджер следит за player.state, player.currentTime, player.duration)*
- - Все наблюдения должны быть удалены одновременно
-   *(например, в `deinit` компонента)*
- - Не хочется управлять отдельными наблюдениями вручную
- 
- **Примеры:** Менеджер с множественными подписками, сервис с группой наблюдений.
- 
  ### Пример
  ```swift
  import AVFoundation
  
  let playerObserver = NSObjectObserver(object: PLAYER)
  
- // Прямое наблюдение
- playerObserver.startObserving(\.timeControlStatus) { player, _ in
-    // Обработать изменение состояния плеера.
- }
- 
- // Групповое наблюдение
  playerObserver.addObserver(self, keyPath: \.currentTime) { player, _ in
     // Обработать изменение времени
  }
@@ -56,6 +30,11 @@ import Foundation
  */
 public class NSObjectObserver<Object> where Object : NSObject {
     /**
+     Строитель наблюдения для конкретного объека.
+     */
+    typealias ObservationBuilder = (Object) -> NSKeyValueObservation
+    
+    /**
      Объект наблюдения.
      */
     public var object: Object? {
@@ -63,111 +42,34 @@ public class NSObjectObserver<Object> where Object : NSObject {
             self.invalidateTokens()
             guard let object = newValue else { return }
             
-            // Восстановить прямые наблюдения
-            self.observations.forEach { key, value in
-                self.tokens[key] = value(object)
-            }
             // Восстановить групповые наблюдения
-            self.groupedObservations.forEach { ownerID, observations in
+            self.observations.forEach { observerID, observations in
                 observations.forEach { keyPathID, observation in
                     let token = observation(object)
-                    self.groupedObservers[ownerID, default: [:]][keyPathID] = token
+                    self.observers[observerID, default: [:]][keyPathID] = token
                 }
             }
         }
     }
     /**
-     Ссылки наблюдателя за объектом для прямых подписок.
-     */
-    private var tokens = [ObjectIdentifier : NSKeyValueObservation]()
-    /**
-     Наблюдатели для прямых подписок.
-     */
-    private var observations = [ObjectIdentifier : (Object) -> NSKeyValueObservation]()
-    /**
      Карта токенов, сгруппированных по владельцам и ключевым путям для группового наблюдения.
      */
-    private var groupedObservers: [ObjectIdentifier: [ObjectIdentifier : NSKeyValueObservation]] = [:]
+    private var observers: [ObjectIdentifier: [ObjectIdentifier : NSKeyValueObservation]] = [:]
     /**
      Наблюдатели для группового наблюдения, сохраненные для восстановления при смене объекта.
      */
-    private var groupedObservations: [ObjectIdentifier: [ObjectIdentifier : (Object) -> NSKeyValueObservation]] = [:]
+    private var observations: [ObjectIdentifier: [ObjectIdentifier : ObservationBuilder]] = [:]
     
     /**
      Создать наблюдателя за объектом.
      */
-    public init() { }
+    public init() {}
     /**
      Создать наблюдателя за объектом.
      - Parameter object: Объект наблюдения.
      */
     public init(object: Object?) {
         self.object = object
-    }
-    
-    /**
-     Установить наблюдателя для конкретного свойства (_ключевого пути_) объекта.
-     
-     - Note: Свойство (_ключевой путь_) должно поддерживать механизм наблюдения с помощью
-     [KVO](https://developer.apple.com/documentation/swift/using-key-value-observing-in-swift).
-     
-     - Important: В случае смены наблюдаемого объекта,
-     все ранее примененные наблюдатели будут назначены новому объекту.
-     
-     - Parameter keyPath: Ключевой путь (_свойство_) для которого устанавливается наблюдение.
-     - Parameter options: Значения, которые могут быть возвращены в словаре изменений.
-     - Parameter changeHandler: Блок, вызываемый при изменении значения.
-     - Returns: Токен наблюдения.
-     
-     Пример использования:
-     ```swift
-     import AVFoundation
-     
-     let playerObserver = NSObjectObserver(object: PLAYER)
-     playerObserver.startObserving(\.timeControlStatus) { [weak self] player, _ in
-        // Обработать изменение состояния плеера.
-        ...
-     }
-     */
-    public func startObserving<Value>(
-        _ keyPath: KeyPath<Object, Value>,
-        options: NSKeyValueObservingOptions = [],
-        changeHandler: @escaping (Object, NSKeyValueObservedChange<Value>) -> Void
-    ) {
-        self.stopObserving(keyPath)
-        
-        let keyPathID = ObjectIdentifier(keyPath)
-        self.tokens[keyPathID] = self.object?.observe(
-            keyPath,
-            options: options,
-            changeHandler: changeHandler
-        )
-        
-        let observation: (Object) -> NSKeyValueObservation = { object in
-            object.observe(keyPath, options: options, changeHandler: changeHandler)
-        }
-        self.observations[keyPathID] = observation
-    }
-    /**
-     Удалить наблюдателя для конкретного свойства (_ключевого пути_) объекта.
-     - Parameter keyPath: Ключевой путь от корневого типа к типу результирующего значения.
-     
-     Пример использования:
-     ```swift
-     import AVFoundation
-     
-     let playerObserver = NSObjectObserver(object: PLAYER)
-     playerObserver.startObserving(\.timeControlStatus) { [weak self] player, _ in
-        // Обработать изменение состояния плеера.
-        ...
-     }
-     ...
-     playerObserver.stopObserving(\.timeControlStatus)
-     */
-    public func stopObserving<Value>(_ keyPath: KeyPath<Object, Value>) {
-        let keyPathID = ObjectIdentifier(keyPath)
-        self.tokens.removeValue(forKey: keyPathID)?.invalidate()
-        self.observations.removeValue(forKey: keyPathID)
     }
     /**
      Добавить наблюдателя, привязанного к внешнему объекту.
@@ -210,30 +112,42 @@ public class NSObjectObserver<Object> where Object : NSObject {
         options: NSKeyValueObservingOptions = [],
         changeHandler: @escaping (Object, NSKeyValueObservedChange<Value>) -> Void
     ) {
-        let token = self.object?.observe(
+        let observerID = ObjectIdentifier(observer)
+        self.stopObserving(keyPath, observer: observerID)
+        
+        let keyPathID = ObjectIdentifier(keyPath)
+        self.observers[observerID, default: [:]][keyPathID] = self.object?.observe(
             keyPath,
             options: options,
             changeHandler: changeHandler
         )
-        let ownerID = ObjectIdentifier(observer)
-        let keyPathID = ObjectIdentifier(keyPath)
-        if let token {
-            self.groupedObservers[ownerID, default: [:]].updateValue(token, forKey: keyPathID)?.invalidate()
-        }
         
         let observation: (Object) -> NSKeyValueObservation = { object in
             object.observe(keyPath, options: options, changeHandler: changeHandler)
         }
-        self.groupedObservations[ownerID, default: [:]].updateValue(observation, forKey: keyPathID)
+        self.observations[observerID, default: [:]].updateValue(observation, forKey: keyPathID)
+    }
+    /**
+     Прекратить наблюдение владельца по конкретному ключевому пути.
+     - Parameter keyPath: Ключевой путь KVO, который требуется снять.
+     - Parameter observer: Объект, для которого удаляется наблюдение.
+     */
+    private func stopObserving<Value>(
+        _ keyPath: KeyPath<Object, Value>,
+        observer observerID: ObjectIdentifier
+    ) {
+        let keyPathID = ObjectIdentifier(keyPath)
+        self.observers[observerID]?.removeValue(forKey: keyPathID)?.invalidate()
+        self.observations[observerID]?.removeValue(forKey: keyPathID)
     }
     /**
      Удалить все наблюдения для конкретного владельца.
      - Parameter observer: Объект, для которого удаляются все наблюдения.
      */
     public func removeObserver(_ observer: AnyObject) {
-        let ownerID = ObjectIdentifier(observer)
-        self.groupedObservers.removeValue(forKey: ownerID)?.forEach { $1.invalidate() }
-        self.groupedObservations.removeValue(forKey: ownerID)
+        let observerID = ObjectIdentifier(observer)
+        self.observers.removeValue(forKey: observerID)?.forEach { $1.invalidate() }
+        self.observations.removeValue(forKey: observerID)
     }
     /**
      Удалить наблюдение владельца по конкретному ключевому пути.
@@ -244,17 +158,13 @@ public class NSObjectObserver<Object> where Object : NSObject {
         _ observer: AnyObject,
         keyPath: KeyPath<Object, Value>
     ) {
-        let ownerID = ObjectIdentifier(observer)
-        let keyPathID = ObjectIdentifier(keyPath)
-        self.groupedObservers[ownerID]?.removeValue(forKey: keyPathID)?.invalidate()
-        self.groupedObservations[ownerID]?.removeValue(forKey: keyPathID)
+        let observerID = ObjectIdentifier(observer)
+        self.stopObserving(keyPath, observer: observerID)
         
-        if self.groupedObservers[ownerID]?.isEmpty == true {
-            self.groupedObservers.removeValue(forKey: ownerID)
-        }
-        if self.groupedObservations[ownerID]?.isEmpty == true {
-            self.groupedObservations.removeValue(forKey: ownerID)
-        }
+        guard self.observers[observerID]?.isEmpty == true else { return }
+        
+        self.observers.removeValue(forKey: observerID)
+        self.observations.removeValue(forKey: observerID)
     }
     /**
      Удалить наблюдателя для всех ключей.
@@ -262,18 +172,13 @@ public class NSObjectObserver<Object> where Object : NSObject {
     public func invalidate() {
         self.invalidateTokens()
         self.observations.removeAll()
-        self.groupedObservers.forEach { $1.forEach { $1.invalidate() } }
-        self.groupedObservers.removeAll()
-        self.groupedObservations.removeAll()
     }
     /**
      Удалить токены для прямых наблюдений.
      */
     private func invalidateTokens() {
-        self.tokens.values.forEach { $0.invalidate() }
-        self.tokens.removeAll()
-        self.groupedObservers.forEach { $1.forEach { $1.invalidate() } }
-        self.groupedObservers.removeAll()
+        self.observers.forEach { $1.forEach { $1.invalidate() } }
+        self.observers.removeAll()
     }
     
     deinit {
