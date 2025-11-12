@@ -39,9 +39,8 @@ open class PlayerViewController: UIViewController {
      */
     public private(set) weak var controlsView: PlayerControlsView!
     
-    private let playerViewObserver = NSObjectObserver<PlayerView>()
-    private let playerObserver = NSObjectObserver<AVPlayer>()
-    private let playerItemObserver = NSObjectObserver<AVPlayerItem>()
+    private let playerObserver = NSObjectObserver<AVPlayer?>()
+    private let playerItemObserver = NSObjectObserver<AVPlayerItem?>()
     
     /**
      Наблюдатель зависаний плеера.
