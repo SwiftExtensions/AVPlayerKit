@@ -34,6 +34,7 @@ import Foundation
  }
  ```
  */
+@available(*, unavailable, renamed: "ObservedNSObject")
 @propertyWrapper
 public class NSObjectObservable<Object> where Object : NSObject {
     /**
