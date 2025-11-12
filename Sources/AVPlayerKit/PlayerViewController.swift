@@ -39,7 +39,7 @@ open class PlayerViewController: UIViewController {
      */
     public private(set) weak var controlsView: PlayerControlsView!
     
-    private var playerToken: NSKeyValueObservation?
+    private let playerViewObserver = NSObjectObserver<PlayerView>()
     private let playerObserver = NSObjectObserver<AVPlayer>()
     private let playerItemObserver = NSObjectObserver<AVPlayerItem>()
     
@@ -84,9 +84,8 @@ open class PlayerViewController: UIViewController {
         self.startPlayerItemObserving()
         self.startPlayerItemStatusObserving()
         
-        self.playerToken = self.playerView.observe(
-            \.player
-        ) { [unowned self] playerView, _ in
+        self.playerViewObserver.object = self.playerView
+        self.playerViewObserver.addObserver(self, keyPath: \.player) { [unowned self] playerView, _ in
             self.playerObserver.object = playerView.player
             if let player = playerView.player {
                 self.startPlayerStallsObserving(player: player)
@@ -97,10 +96,7 @@ open class PlayerViewController: UIViewController {
     }
     
     private func startPlayerStatusObserving() {
-        self.playerObserver.addObserver(
-            self,
-            keyPath: \.status
-        ) { [unowned self] player, _ in
+        self.playerObserver.addObserver(self, keyPath: \.status) { [unowned self] player, _ in
             if player.status == .failed {
                 let message = player.error?.localizedDescription ?? "Неизвестная ошибка."
                 self.statusView.showStatusInfo(message)
@@ -221,10 +217,6 @@ open class PlayerViewController: UIViewController {
         _ delegate: AVPictureInPictureControllerEventDelegate
     ) {
         self.pipController?.setDelegate(delegate)
-    }
-    
-    deinit {
-        self.playerToken?.invalidate()
     }
     
     
