@@ -29,7 +29,8 @@ open class PlayerViewController: UIViewController {
      Дополнительную информацию см.:
      [Creating a Movie Player App with Basic Playback Controls](https://developer.apple.com/documentation/avfoundation/media_playback_and_selection/creating_a_movie_player_app_with_basic_playback_controls).
      */
-    public private(set) weak var playerView: PlayerView!
+    @ObservedNSObject
+    public private(set) var playerView: PlayerView!
     /**
      Представление для отображения текущего состояния плеера.
      */
@@ -83,8 +84,7 @@ open class PlayerViewController: UIViewController {
         self.startPlayerItemObserving()
         self.startPlayerItemStatusObserving()
         
-        self.playerViewObserver.object = self.playerView
-        self.playerViewObserver.addObserver(self, keyPath: \.player) { [unowned self] playerView, _ in
+        self.$playerView.addObserver(self, keyPath: \.player) { [unowned self] playerView, _ in
             self.playerObserver.object = playerView.player
             if let player = playerView.player {
                 self.startPlayerStallsObserving(player: player)
