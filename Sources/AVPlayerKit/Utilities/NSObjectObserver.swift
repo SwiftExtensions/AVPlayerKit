@@ -32,7 +32,7 @@ public class NSObjectObserver<Object> {
     /**
      Строитель наблюдения для конкретного объека.
      */
-    typealias ObservationBuilder = (Object) -> NSKeyValueObservation
+    typealias ObservationBuilder = (Object) -> NSKeyValueObservation?
     
     /**
      Объект наблюдения.
@@ -40,7 +40,9 @@ public class NSObjectObserver<Object> {
     public var object: Object {
         willSet {
             self.invalidateTokens()
-            if let newValue = newValue as? (any OptionalType), newValue.optional == nil { return }
+            if let newValue = newValue as? (any AnyOptional) {
+                if newValue.isNil { return }
+            }
             
             // Восстановить групповые наблюдения
             self.observations.forEach { observerID, observations in
@@ -230,8 +232,8 @@ public class NSObjectObserver<Object> {
             changeHandler: changeHandler
         )
         
-        let observation: (Object) -> NSKeyValueObservation = { object in
-            object!.observe(keyPath, options: options, changeHandler: changeHandler)
+        let observation: ObservationBuilder = { object in
+            object?.observe(keyPath, options: options, changeHandler: changeHandler)
         }
         self.observations[observerID, default: [:]].updateValue(observation, forKey: keyPathID)
     }
