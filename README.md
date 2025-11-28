@@ -114,6 +114,88 @@ playerViewController.enableAirPlay()
 
 `AVRoutePickerView` автоматически отображает список доступных маршрутов воспроизведения.
 
+## Картинка в картинке (Picture-in-Picture)
+
+```swift
+import AVPlayerKit
+
+let playerViewController = PlayerViewController()
+playerViewController.enablePictureInPicture()
+```
+
+Для обработки событий PiP реализуйте протокол `AVPictureInPictureControllerEventDelegate`:
+
+```swift
+extension YourViewController: AVPictureInPictureControllerEventDelegate {
+    func pictureInPictureController(
+        _ pictureInPictureController: AVPictureInPictureController,
+        event: AVPictureInPictureController.Event
+    ) {
+        switch event {
+        case .willStart:
+            print("PiP начинает запуск")
+        case .didStart:
+            print("PiP запущен")
+        case .failedToStart(let error):
+            print("Ошибка запуска PiP: \(error)")
+        case .willStop:
+            print("PiP начинает завершение")
+        case .didStop:
+            print("PiP завершён")
+        }
+    }
+}
+
+// Установка делегата
+playerViewController.setPictureInPictureControllerEventDelegate(self)
+```
+
+> **Примечание:** Для работы PiP необходимо включить capability **Background Modes → Audio, AirPlay, and Picture in Picture** в настройках таргета.
+
+### Использование AVPictureInPictureControllerDelegateProxy
+
+`AVPictureInPictureControllerDelegateProxy` — прокси-класс для обработки событий `AVPictureInPictureControllerDelegate` с поддержкой множественных подписчиков. Позволяет нескольким объектам получать события PiP без необходимости передавать делегат напрямую.
+
+```swift
+import AVKit
+import AVPlayerKit
+
+let pipController = AVPictureInPictureController(playerLayer: playerLayer)
+let delegateProxy = AVPictureInPictureControllerDelegateProxy()
+
+// Устанавливаем прокси как делегат контроллера PiP
+pipController?.delegate = delegateProxy
+
+// Добавляем подписчиков на события
+delegateProxy.setDelegate(self)
+delegateProxy.setDelegate(analyticsHandler)
+
+// Для восстановления UI после выхода из PiP устанавливаем dataSource
+delegateProxy.dataSource = self
+```
+
+Реализуйте `AVPictureInPictureControllerDataSource` для восстановления интерфейса:
+
+```swift
+extension YourViewController: AVPictureInPictureControllerDataSource {
+    func pictureInPictureController(
+        _ pictureInPictureController: AVPictureInPictureController,
+        restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void
+    ) {
+        // Восстанавливаем UI (например, показываем контроллер плеера)
+        present(playerViewController, animated: true) {
+            completionHandler(true)
+        }
+    }
+}
+```
+
+Для удаления подписчика используйте `removeDelegate(_:)`:
+
+```swift
+delegateProxy.removeDelegate(self)
+```
+
 ## Интеграция с Now Playing
 
 ![Демонстрация Now Playing](Images/now-playing-info-demo.gif)
