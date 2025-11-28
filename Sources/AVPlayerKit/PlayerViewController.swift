@@ -44,7 +44,11 @@ open class PlayerViewController: UIViewController {
      */
     @ObservedNSObject
     public private(set) var player: AVPlayer?
-    private let playerItemObserver = NSObjectObserver<AVPlayerItem?>()
+    /**
+     Текущий элемент воспроизведения, связанный с плеером.
+     */
+    @ObservedNSObject
+    public private(set) var playerItem: AVPlayerItem?
     
     /**
      Наблюдатель зависаний плеера.
@@ -135,12 +139,12 @@ open class PlayerViewController: UIViewController {
             self,
             keyPath: \.currentItem
         ) { [unowned self] player, _ in
-            self.playerItemObserver.object = player.currentItem
+            self.playerItem = player.currentItem
         }
     }
     
     private func startPlayerItemStatusObserving() {
-        self.playerItemObserver.addObserver(
+        self.$playerItem.addObserver(
             self,
             keyPath: \.status
         ) { [unowned self] playerItem, _ in
