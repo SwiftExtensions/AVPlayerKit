@@ -204,7 +204,7 @@ open class PlayerViewController: UIViewController {
                 Используйте реальное устройство.
                 """
             #else
-            message = "Нет доступных устройоств."
+            message = "Нет доступных устройств."
             #endif
             let alert = UIAlertController(
                 title: "Внимание!",
