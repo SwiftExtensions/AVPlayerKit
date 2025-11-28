@@ -104,8 +104,12 @@ open class PlayerViewController: UIViewController {
     private func startPlayerStatusObserving() {
         self.$player.addObserver(self, keyPath: \.status) { [unowned self] player, _ in
             if player.status == .failed {
-                let message = player.error?.localizedDescription ?? "Неизвестная ошибка."
-                self.statusView.showStatusInfo(message)
+                let imageConfig = UIImage.SymbolConfiguration(scale: .large)
+                let image = UIImage(systemName: "play.slash.fill")
+                self.statusView.showStatusInfo(
+                    image: image?.applyingSymbolConfiguration(imageConfig),
+                    title: player.error?.localizedDescription ?? "Неизвестная ошибка."
+                )
             } else {
                 self.statusView.hideStatusInfo()
             }
@@ -127,8 +131,12 @@ open class PlayerViewController: UIViewController {
         if isExternalPlaybackActive {
             let route = AVAudioSession.sharedInstance().currentRoute
             let deviceName = route.outputs.first?.portName ?? "(не определено)"
-            let message = "Идет трансляция на внешнем устройстройстве: \(deviceName)."
-            self.statusView.showStatusInfo(message)
+            let imageConfig = UIImage.SymbolConfiguration(scale: .large)
+            let image = UIImage(systemName: "airplayvideo")
+            self.statusView.showStatusInfo(
+                image: image?.applyingSymbolConfiguration(imageConfig),
+                title: "Идет трансляция на внешнем устройстройстве: \(deviceName)."
+            )
         } else {
             self.statusView.hideStatusInfo()
         }
@@ -149,8 +157,12 @@ open class PlayerViewController: UIViewController {
             keyPath: \.status
         ) { [unowned self] playerItem, _ in
             if playerItem.status == .failed {
-                let message = playerItem.error?.localizedDescription ?? "Неизвестная ошибка"
-                self.statusView.showStatusInfo(message)
+                let imageConfig = UIImage.SymbolConfiguration(scale: .large)
+                let image = UIImage(systemName: "play.slash.fill")
+                self.statusView.showStatusInfo(
+                    image: image?.applyingSymbolConfiguration(imageConfig),
+                    title: playerItem.error?.localizedDescription ?? "Неизвестная ошибка."
+                )
             } else {
                 self.statusView.hideStatusInfo()
             }

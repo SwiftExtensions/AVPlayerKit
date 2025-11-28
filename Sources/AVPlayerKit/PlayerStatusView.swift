@@ -23,19 +23,16 @@ public class PlayerStatusView: UIView {
         return indicator
     }()
     
-    public private(set) lazy var infoLabel: EdgeInsetsLabel = {
-        let label = EdgeInsetsLabel()
+    public private(set) lazy var infoLabel: LabelView = {
+        let label = LabelView(image: nil, title: nil)
+        label.spacing = 12.0
+        label.tintColor = .white
         label.textColor = .white
         label.backgroundColor = .black
+        label.layer.cornerCurve = .continuous
         label.layer.cornerRadius = 8.0
         label.layer.masksToBounds = true
         label.numberOfLines = 0
-        label.insets = UIEdgeInsets(
-            top: 4.0,
-            left: 6.0,
-            bottom: 4.0,
-            right: 6.0
-        )
         label.font = .preferredFont(forTextStyle: .footnote)
         label.textAlignment = .center
 //        label.adjustsFontForContentSizeCategory = true
@@ -87,13 +84,15 @@ public class PlayerStatusView: UIView {
         self.loadingIndicator.stopAnimating()
     }
     
-    func showStatusInfo(_ message: String) {
-        self.infoLabel.text = message
+    func showStatusInfo(image: UIImage?, title: String?) {
+        self.infoLabel.image = image
+        self.infoLabel.title = title
         self.infoLabel.isHidden = false
     }
     
     func hideStatusInfo() {
-        self.infoLabel.text = nil
+        self.infoLabel.image = nil
+        self.infoLabel.title = nil
         self.infoLabel.isHidden = true
     }
     
