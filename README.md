@@ -17,7 +17,7 @@ AVPlayerKit — набор расширений и UI-компонентов д�
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/nicponskern/AVPlayerKit.git", branch: "main")
+    .package(url: "https://github.com/<your-org>/AVPlayerKit.git", branch: "main")
 ]
 ```
 
@@ -71,6 +71,35 @@ playerViewController.didMove(toParent: self)
 ```
 
 `PlayerViewController` автоматически отслеживает состояние `AVPlayer`, отображает ошибки и анимацию буферизации.
+
+## Наблюдение за состоянием плеера
+
+Свойства `playerView`, `player` и `playerItem` поддерживают KVO-наблюдение через property wrapper `@ObservedNSObject`:
+
+```swift
+let playerViewController = PlayerViewController()
+
+// Наблюдаем за изменением плеера.
+playerViewController.$player.addObserver(self, keyPath: \.timeControlStatus) { player, _ in
+    switch player.timeControlStatus {
+    case .playing:
+        print("Воспроизведение")
+    case .paused:
+        print("Пауза")
+    case .waitingToPlayAtSpecifiedRate:
+        print("Буферизация")
+    @unknown default:
+        break
+    }
+}
+
+// Наблюдаем за изменением текущего элемента воспроизведения.
+playerViewController.$playerItem.addObserver(self, keyPath: \.status) { playerItem, _ in
+    if playerItem.status == .readyToPlay {
+        print("Готов к воспроизведению")
+    }
+}
+```
 
 ## AirPlay
 
