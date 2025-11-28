@@ -39,8 +39,11 @@ open class PlayerViewController: UIViewController {
      Представление с элементами управления плеера.
      */
     public private(set) weak var controlsView: PlayerControlsView!
-    
-    private let playerObserver = NSObjectObserver<AVPlayer?>()
+    /**
+     Экземпляр плеера, используемый для воспроизведения медиаконтента.
+     */
+    @ObservedNSObject
+    public private(set) var player: AVPlayer?
     private let playerItemObserver = NSObjectObserver<AVPlayerItem?>()
     
     /**
@@ -85,7 +88,7 @@ open class PlayerViewController: UIViewController {
         self.startPlayerItemStatusObserving()
         
         self.$playerView.addObserver(self, keyPath: \.player) { [unowned self] playerView, _ in
-            self.playerObserver.object = playerView.player
+            self.player = playerView.player
             if let player = playerView.player {
                 self.startPlayerStallsObserving(player: player)
             } else {
@@ -95,7 +98,7 @@ open class PlayerViewController: UIViewController {
     }
     
     private func startPlayerStatusObserving() {
-        self.playerObserver.addObserver(self, keyPath: \.status) { [unowned self] player, _ in
+        self.$player.addObserver(self, keyPath: \.status) { [unowned self] player, _ in
             if player.status == .failed {
                 let message = player.error?.localizedDescription ?? "Неизвестная ошибка."
                 self.statusView.showStatusInfo(message)
@@ -106,7 +109,7 @@ open class PlayerViewController: UIViewController {
     }
     
     private func startExternalPlaybackObserving() {
-        self.playerObserver.addObserver(
+        self.$player.addObserver(
             self,
             keyPath: \.isExternalPlaybackActive
         ) { [unowned self] player, _ in
@@ -128,7 +131,7 @@ open class PlayerViewController: UIViewController {
     }
     
     private func startPlayerItemObserving() {
-        self.playerObserver.addObserver(
+        self.$player.addObserver(
             self,
             keyPath: \.currentItem
         ) { [unowned self] player, _ in
