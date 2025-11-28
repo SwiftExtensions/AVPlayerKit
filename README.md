@@ -17,7 +17,7 @@ AVPlayerKit — набор расширений и UI-компонентов д�
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/<your-org>/AVPlayerKit.git", branch: "main")
+    .package(url: "https://github.com/nicponskern/AVPlayerKit.git", branch: "main")
 ]
 ```
 
@@ -54,12 +54,13 @@ player.play()
 import AVPlayerKit
 
 // Инициализируем `AVPlayer` медиапотоком, который требуется воспроизвести.
+let streamURL = URL(string: "https://example.com/stream.m3u8")!
 let player = AVPlayer(url: streamURL)
 // Создаём `PlayerViewController` и привязываем к нему плеер.
 let playerViewController = PlayerViewController()
 playerViewController.playerView.player = player
 // Включаем встроенную кнопку AirPlay.
-playerViewController.enableRoutePickerView()
+playerViewController.enableAirPlay()
 
 // Добавляем контроллер плеера в текущую иерархию `UIViewController`.
 addChild(playerViewController)
@@ -71,7 +72,7 @@ playerViewController.didMove(toParent: self)
 
 `PlayerViewController` автоматически отслеживает состояние `AVPlayer`, отображает ошибки и анимацию буферизации.
 
-## AVRoutePickerView
+## AirPlay
 
 ![Демонстрация AVRoutePickerView](Images/av-route-picker-view-demo.gif)
 
@@ -79,10 +80,10 @@ playerViewController.didMove(toParent: self)
 import AVPlayerKit
 
 let playerViewController = PlayerViewController()
-playerViewController.enableRoutePickerView()
+playerViewController.enableAirPlay()
 ```
 
-`AVRoutePickerView` автоматически отслеживает наличие нескольких доступных маршрутов воспроизведения и отображает список доступных маршрутов при необходимости.
+`AVRoutePickerView` автоматически отображает список доступных маршрутов воспроизведения.
 
 ## Интеграция с Now Playing
 
@@ -94,7 +95,9 @@ import AVPlayerKit
 
 var nowPlaying = NowPlayingInfoBuilder(title: "AVPlayer Demo", artist: "Bridge TV")
 nowPlaying.mediaType = .video
-nowPlaying.setArtwork(UIImage(named: "cover"))
+if let cover = UIImage(named: "cover") {
+    nowPlaying.setArtwork(cover)
+}
 
 MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlaying.build()
 ```
@@ -106,19 +109,20 @@ MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlaying.build()
 ```swift
 import AVPlayerKit
 
+let player = AVPlayer(url: streamURL)
 let remoteCommandCenter = RemoteCommandCenter()
 
 // Регистрируем обработчик команды воспроизведения.
-remoteCommandCenter.addAction(\.playCommand) { _ in
+remoteCommandCenter.addAction(\.playCommand) { [weak player] _ in
     // Запускаем воспроизведение при сигнале от внешнего пульта.
-    player.play()
+    player?.play()
     return .success
 }
 
 // Регистрируем обработчик команды паузы.
-remoteCommandCenter.addAction(\.pauseCommand) { _ in
+remoteCommandCenter.addAction(\.pauseCommand) { [weak player] _ in
     // Приостанавливаем воспроизведение при сигнале от внешнего пульта.
-    player.pause()
+    player?.pause()
     return .success
 }
 ```
@@ -146,6 +150,7 @@ remoteCommandCenter.isEnabled = true
 import AVFoundation
 import AVPlayerKit
 
+let streamURL = URL(string: "https://example.com/stream.m3u8")!
 let asset = AVAsset(url: streamURL)
 asset.validate { error in
     if let error {
