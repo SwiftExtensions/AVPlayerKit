@@ -21,25 +21,63 @@ public extension AVAsset {
      Ресурс считается непригодным для проигрывания, если значение `isPlayable`
      равно `false` или значение `hasProtectedContent` равно `true`.
 
+     Если проверка не завершилась за время `timeout`, загрузка ключей отменяется
+     и выбрасывается ошибка `URLError.timedOut`.
+
+     - Parameter timeout: Максимальное время проверки в секундах.
+       Значение `nil` означает отсутствие ограничения.
      - Throws: `AVAssetError.isNotPlayable`, если ресурс не поддерживает проигрывание.
      - Throws: `AVAssetError.hasProtectedContent`, если ресурс содержит защищенный контент.
+     - Throws: `URLError.timedOut`, если проверка не завершилась за время `timeout`.
      - Throws: Ошибка загрузки, если не удалось загрузить ключи ресурса.
 
      Пример:
      ``` swift
      let asset = AVAsset(url: URL_OF_ASSET)
-     try await asset.validatePlayability()
+     try await asset.validatePlayability(timeout: 5.0)
      // Ресурс пригоден для проигрывания.
      ```
      */
-    func validatePlayability() async throws {
-        let isPlayable = try await self.load(.isPlayable)
-        guard isPlayable else {
-            throw AVAssetError.isNotPlayable
+    func validatePlayability(timeout: TimeInterval? = nil) async throws {
+        guard let timeout else {
+            return try await self.loadAndValidatePlayability()
         }
-        let hasProtectedContent = try await self.load(.hasProtectedContent)
-        if hasProtectedContent {
-            throw AVAssetError.hasProtectedContent
+        
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask {
+                try await self.loadAndValidatePlayability()
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                throw URLError(.timedOut)
+            }
+            defer { group.cancelAll() }
+            try await group.next()
+        }
+    }
+    /**
+     Загрузить ключи `isPlayable` и `hasProtectedContent` и проверить их значения.
+
+     При отмене задачи отменяет загрузку ключей ресурса.
+
+     - Throws: `AVAssetError.isNotPlayable`, если ресурс не поддерживает проигрывание.
+     - Throws: `AVAssetError.hasProtectedContent`, если ресурс содержит защищенный контент.
+     - Throws: Ошибка загрузки, если не удалось загрузить ключи ресурса.
+     */
+    private func loadAndValidatePlayability() async throws {
+        try await withTaskCancellationHandler {
+            let (isPlayable, hasProtectedContent) = try await self.load(
+                .isPlayable,
+                .hasProtectedContent
+            )
+            guard isPlayable else {
+                throw AVAssetError.isNotPlayable
+            }
+            if hasProtectedContent {
+                throw AVAssetError.hasProtectedContent
+            }
+        } onCancel: {
+            self.cancelLoading()
         }
     }
     /**
