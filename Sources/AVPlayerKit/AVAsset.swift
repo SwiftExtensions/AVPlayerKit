@@ -11,6 +11,38 @@ public extension AVAsset {
     typealias Completion = (_ error: Error?) -> Void
     
     /**
+     Проверить возможность проигрывания ресурса.
+
+     Асинхронно загружает ключи
+     [isPlayable](https://developer.apple.com/documentation/avfoundation/avasset/1385974-isplayable) и
+     [hasProtectedContent](https://developer.apple.com/documentation/avfoundation/avasset/1389223-hasprotectedcontent)
+     и проверяет их значения.
+
+     Ресурс считается непригодным для проигрывания, если значение `isPlayable`
+     равно `false` или значение `hasProtectedContent` равно `true`.
+
+     - Throws: `AVAssetError.isNotPlayable`, если ресурс не поддерживает проигрывание.
+     - Throws: `AVAssetError.hasProtectedContent`, если ресурс содержит защищенный контент.
+     - Throws: Ошибка загрузки, если не удалось загрузить ключи ресурса.
+
+     Пример:
+     ``` swift
+     let asset = AVAsset(url: URL_OF_ASSET)
+     try await asset.validatePlayability()
+     // Ресурс пригоден для проигрывания.
+     ```
+     */
+    func validatePlayability() async throws {
+        let isPlayable = try await self.load(.isPlayable)
+        guard isPlayable else {
+            throw AVAssetError.isNotPlayable
+        }
+        let hasProtectedContent = try await self.load(.hasProtectedContent)
+        if hasProtectedContent {
+            throw AVAssetError.hasProtectedContent
+        }
+    }
+    /**
      Проверить поток.
      
      Загружает и тестирует ключи
