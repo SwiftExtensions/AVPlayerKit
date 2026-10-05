@@ -145,7 +145,8 @@ open class PlayerViewController: UIViewController {
     private func startPlayerItemObserving() {
         self.$player.addObserver(
             self,
-            keyPath: \.currentItem
+            keyPath: \.currentItem,
+            options: [.initial]
         ) { [unowned self] player, _ in
             self.playerItem = player.currentItem
         }
@@ -154,7 +155,8 @@ open class PlayerViewController: UIViewController {
     private func startPlayerItemStatusObserving() {
         self.$playerItem.addObserver(
             self,
-            keyPath: \.status
+            keyPath: \.status,
+            options: [.initial]
         ) { [unowned self] playerItem, _ in
             if playerItem.status == .failed {
                 let imageConfig = UIImage.SymbolConfiguration(scale: .large)
