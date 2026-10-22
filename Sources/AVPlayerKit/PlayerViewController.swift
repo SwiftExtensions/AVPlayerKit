@@ -49,6 +49,10 @@ open class PlayerViewController: UIViewController {
      */
     @ObservedNSObject
     public private(set) var playerItem: AVPlayerItem?
+    /**
+     Делегат, сообщающий об ошибках воспроизведения.
+     */
+    public weak var playbackErrorDelegate: PlaybackErrorDelegate?
     
     /**
      Наблюдатель зависаний плеера.
@@ -110,6 +114,11 @@ open class PlayerViewController: UIViewController {
                     image: image?.applyingSymbolConfiguration(imageConfig),
                     title: player.error?.localizedDescription ?? "Неизвестная ошибка."
                 )
+                self.playbackErrorDelegate?.playerViewController(
+                    self,
+                    player: player,
+                    didFailWith: player.error
+                )
             } else {
                 self.statusView.hideStatusInfo()
             }
@@ -164,6 +173,11 @@ open class PlayerViewController: UIViewController {
                 self.statusView.showStatusInfo(
                     image: image?.applyingSymbolConfiguration(imageConfig),
                     title: playerItem.error?.localizedDescription ?? "Неизвестная ошибка."
+                )
+                self.playbackErrorDelegate?.playerViewController(
+                    self,
+                    playerItem: playerItem,
+                    didFailWith: playerItem.error
                 )
             } else {
                 self.statusView.hideStatusInfo()
