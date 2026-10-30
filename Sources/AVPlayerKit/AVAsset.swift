@@ -11,21 +11,13 @@ public extension AVAsset {
     typealias Completion = (_ error: Error?) -> Void
     
     /**
-     Проверить возможность проигрывания ресурса.
+     Проверить возможность проигрывания ресурса с ограничением времени.
 
-     Асинхронно загружает ключи
-     [isPlayable](https://developer.apple.com/documentation/avfoundation/avasset/1385974-isplayable) и
-     [hasProtectedContent](https://developer.apple.com/documentation/avfoundation/avasset/1389223-hasprotectedcontent)
-     и проверяет их значения.
-
-     Ресурс считается непригодным для проигрывания, если значение `isPlayable`
-     равно `false` или значение `hasProtectedContent` равно `true`.
-
-     Если проверка не завершилась за время `timeout`, загрузка ключей отменяется
-     и выбрасывается ошибка `URLError.timedOut`.
+     Метод использует `validatePlayability()`. Если проверка не завершится
+     за время `timeout`, загрузка ключей отменяется и выбрасывается ошибка
+     `URLError.timedOut`.
 
      - Parameter timeout: Максимальное время проверки в секундах.
-       Значение `nil` означает отсутствие ограничения.
      - Throws: `AVAssetError.isNotPlayable`, если ресурс не поддерживает проигрывание.
      - Throws: `AVAssetError.hasProtectedContent`, если ресурс содержит защищенный контент.
      - Throws: `URLError.timedOut`, если проверка не завершилась за время `timeout`.
@@ -38,14 +30,10 @@ public extension AVAsset {
      // Ресурс пригоден для проигрывания.
      ```
      */
-    func validatePlayability(timeout: TimeInterval? = nil) async throws {
-        guard let timeout else {
-            return try await self.loadAndValidatePlayability()
-        }
-        
+    func validatePlayability(timeout: TimeInterval) async throws {
         try await withThrowingTaskGroup(of: Void.self) { group in
             group.addTask {
-                try await self.loadAndValidatePlayability()
+                try await self.validatePlayability()
             }
             group.addTask {
                 try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
@@ -56,7 +44,15 @@ public extension AVAsset {
         }
     }
     /**
-     Загрузить ключи `isPlayable` и `hasProtectedContent` и проверить их значения.
+     Проверить возможность проигрывания ресурса.
+
+     Асинхронно загружает ключи
+     [isPlayable](https://developer.apple.com/documentation/avfoundation/avasset/1385974-isplayable) и
+     [hasProtectedContent](https://developer.apple.com/documentation/avfoundation/avasset/1389223-hasprotectedcontent)
+     и проверяет их значения.
+
+     Ресурс считается непригодным для проигрывания, если значение `isPlayable`
+     равно `false` или значение `hasProtectedContent` равно `true`.
 
      При отмене задачи отменяет загрузку ключей ресурса.
 
@@ -64,7 +60,7 @@ public extension AVAsset {
      - Throws: `AVAssetError.hasProtectedContent`, если ресурс содержит защищенный контент.
      - Throws: Ошибка загрузки, если не удалось загрузить ключи ресурса.
      */
-    private func loadAndValidatePlayability() async throws {
+    func validatePlayability() async throws {
         try await withTaskCancellationHandler {
             let (isPlayable, hasProtectedContent) = try await self.load(
                 .isPlayable,
