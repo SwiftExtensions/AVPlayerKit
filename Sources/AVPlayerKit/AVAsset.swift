@@ -123,6 +123,43 @@ public extension AVAsset {
         }
     }
     /**
+     Проверить поток с ограничением времени.
+
+     Метод использует `validate(completion:)`. Если проверка не завершится
+     за отведённое время, загрузка отменяется, а обработчик вызывается
+     с ошибкой `URLError.timedOut`.
+
+     - Parameter timeout: Максимальное время проверки в секундах.
+     - Parameter completion: Обработчик результата. Вызывается в главном потоке.
+     */
+    func validate(
+        timeout: TimeInterval,
+        completion: @escaping Completion
+    ) {
+        var pendingCompletion: Completion? = completion
+
+        let timeoutWorkItem = DispatchWorkItem { [weak self] in
+            guard let finish = pendingCompletion else { return }
+            pendingCompletion = nil
+
+            self?.cancelLoading()
+            finish(URLError(.timedOut))
+        }
+
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + timeout,
+            execute: timeoutWorkItem
+        )
+
+        self.validate { error in
+            guard let finish = pendingCompletion else { return }
+            pendingCompletion = nil
+
+            timeoutWorkItem.cancel()
+            finish(error)
+        }
+    }
+    /**
      Подтвердить успешную загрузку ключей и проверить их значение.
      - Parameter keys: Список ключей для проверки.
      - Parameter completion: Блок, вызываемый после проверки потока.
