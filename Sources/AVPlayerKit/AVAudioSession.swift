@@ -9,7 +9,7 @@ public extension AVAudioSession {
      Установить режим проигрывания фильмов для аудиосессии.
      */
     func configureMoviePlayback() throws {
-        try self.setCategory(.playback, mode: .moviePlayback, policy: .longForm, options: [])
+        try self.setCategory(.playback, mode: .moviePlayback, policy: .longFormAudio, options: [])
         try self.setActive(true)
     }
     /**
