@@ -7,6 +7,7 @@ AVPlayerKit — набор расширений и UI-компонентов д�
 - **Контроллер плеера**. `PlayerViewController` объединяет `PlayerView`, `PlayerStatusView` и `PlayerControlsView` для быстрого создания интерфейса воспроизведения.
 - **Статусы и задержки**. `PlayerStatusView` выводит состояние плеера, а `PlayerStallsObserver` отслеживает буферизацию.
 - **Валидация ресурсов**. `AVAssetValidator` последовательно проверяет коллекцию потоков и сообщает об изменении их состояний.
+- **Перехват загрузки ресурсов**. `AVAssetLoaderInterceptor` перехватывает загрузку ресурсов HLS-потока через `AVAssetResourceLoader` и позволяет преобразовывать плейлисты и обрабатывать запросы медиаресурсов.
 - **Now Playing**. `NowPlayingInfoBuilder` подготавливает словарь для `MPNowPlayingInfoCenter`.
 - **Дистанционное управление**. `RemoteCommandCenter` регистрирует действия в `MPRemoteCommandCenter`.
 
@@ -367,6 +368,61 @@ validator.cancelValidation(at: 0)
 ```
 
 Проверки выполняются последовательно. Новый запрос добавляется в очередь, отмена запроса прерывает текущую проверку и возвращает элемент в состояние `.unknown`. Для элементов с известным состоянием или активным запросом проверка не запускается.
+
+## Перехват загрузки ресурсов HLS
+
+`AVAssetLoaderInterceptor` перехватывает загрузку ресурсов HLS-потока через `AVAssetResourceLoader`. Так как загрузчик ресурсов перехватывает только схемы, отличные от `http`/`https`, схема исходного URL переписывается на перехватываемую с префиксом `intercepted-`: `https://example.com/master.m3u8` → `intercepted-https://example.com/master.m3u8`.
+
+Плейлисты `.m3u8` перехватчик загружает самостоятельно и передаёт делегату `AVAssetLoaderInterceptorPlaylistDelegate` данные для преобразования. Остальные запросы передаются делегату `AVAssetLoaderInterceptorMediaDelegate` целиком. Делегаты опциональны: без них запросы передаются плееру без обработки (_плейлист — данными без преобразования, медиаресурс — редиректом_).
+
+```swift
+import AVFoundation
+import AVPlayerKit
+
+final class PlaybackController: NSObject {
+    let player = AVPlayer()
+    let interceptor = AVAssetLoaderInterceptor()
+
+    func play(url: URL) throws {
+        // Создаём элемент проигрывателя с перехватом загрузки ресурсов:
+        // схема URL переписывается, перехватчик назначается загрузчику ресурсов.
+        let playerItem = try self.interceptor.playerItem(from: url)
+        self.interceptor.playlistDelegate = self
+        self.interceptor.mediaDelegate = self
+
+        self.player.replaceCurrentItem(with: playerItem)
+        self.player.play()
+    }
+}
+
+// Преобразование загруженных плейлистов.
+extension PlaybackController: AVAssetLoaderInterceptorPlaylistDelegate {
+    func assetLoaderInterceptor(
+        _ interceptor: AVAssetLoaderInterceptor,
+        m3u8Data: Data,
+        originalRequest: URLRequest,
+        completion: @escaping (Data) -> Void
+    ) {
+        completion(m3u8Data)
+    }
+}
+
+// Обработка перехваченных запросов медиаресурсов.
+extension PlaybackController: AVAssetLoaderInterceptorMediaDelegate {
+    func assetLoaderInterceptor(
+        _ interceptor: AVAssetLoaderInterceptor,
+        resourceFor originalURL: URL,
+        loadingRequest: AVAssetResourceLoadingRequest
+    ) {
+        // Передаём ресурс плееру редиректом на исходный URL.
+        interceptor.redirect(to: originalURL, loadingRequest: loadingRequest)
+    }
+}
+```
+
+Делегат медиаресурсов обязан завершить запрос ровно один раз: данными (`loadingRequest.dataRequest?.respond(with:)` + `finishLoading()`), редиректом (`interceptor.redirect(to:loadingRequest:)`) или ошибкой (`loadingRequest.finishLoading(with:)`).
+
+Для уже созданных `AVURLAsset` или `AVPlayerItem` перехватчик назначается методами `register(asset:)` и `register(playerItem:)`. Переписывание схемы выполняет структура `InterceptedURL`.
 
 ## Аналитика просмотра
 
