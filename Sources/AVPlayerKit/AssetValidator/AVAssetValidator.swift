@@ -28,8 +28,26 @@ public final class AVAssetValidator<Items: AVAssetStatusManageableItems> {
 
     /**
      Индексы элементов с активным запросом на проверку.
+
+     Запросы поступают с потока интерфейса, а проверка читает множество
+     в фоновой задаче: доступ к хранилищу сериализуется блокировкой.
      */
-    private var activeRequests: Set<Items.Index> = []
+    private var activeRequests: Set<Items.Index> {
+        get {
+            self.lock.lock()
+            defer { self.lock.unlock() }
+            return self._activeRequests
+        }
+        set {
+            self.lock.lock()
+            defer { self.lock.unlock() }
+            self._activeRequests = newValue
+        }
+    }
+    /**
+     Хранилище индексов элементов с активным запросом на проверку.
+     */
+    private var _activeRequests: Set<Items.Index> = []
     /**
      Очередь индексов элементов для проверки.
      */
@@ -59,6 +77,14 @@ public final class AVAssetValidator<Items: AVAssetStatusManageableItems> {
      Индекс элемента с приоритетной проверкой.
      */
     private var priorityValidationIndex: Items.Index?
+
+    /**
+     Блокировка доступа к активным запросам.
+
+     Запросы поступают с потока интерфейса, а проверка читает множество
+     в фоновой задаче: доступ к `activeRequests` сериализуется.
+     */
+    private let lock = NSLock()
 
     /**
      Создаёт валидатор ресурсов.
