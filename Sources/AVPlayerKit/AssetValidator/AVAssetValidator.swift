@@ -16,10 +16,6 @@ import Foundation
  */
 public final class AVAssetValidator<Items: AVAssetStatusManageableItems> {
     /**
-     Максимальное время ожидания проверки одного ресурса в секундах.
-     */
-    private let timeout: TimeInterval
-    /**
      Коллекция проверяемых ресурсов с управлением состояниями.
      */
     private let items: Items
@@ -67,14 +63,18 @@ public final class AVAssetValidator<Items: AVAssetStatusManageableItems> {
     /**
      Создаёт валидатор ресурсов.
 
+     Время ожидания передаётся замыканием и вычисляется при каждой проверке:
+     изменение значения применяется к следующим проверкам без перезапуска
+     валидатора.
+
      - Parameter items: Коллекция проверяемых ресурсов с управлением
        состояниями.
-     - Parameter timeout: Максимальное время ожидания проверки одного ресурса
-       в секундах.
+     - Parameter timeout: Замыкание максимального времени ожидания проверки
+       одного ресурса в секундах.
      */
-    public convenience init(items: Items, timeout: TimeInterval) {
-        self.init(items: items, timeout: timeout) { url in
-            try await AVAsset(url: url).validatePlayability(timeout: timeout)
+    public convenience init(items: Items, timeout: @escaping @autoclosure () -> TimeInterval) {
+        self.init(items: items) { url in
+            try await AVAsset(url: url).validatePlayability(timeout: timeout())
         }
     }
 
@@ -83,19 +83,15 @@ public final class AVAssetValidator<Items: AVAssetStatusManageableItems> {
 
      - Parameter items: Коллекция проверяемых ресурсов с управлением
        состояниями.
-     - Parameter timeout: Максимальное время ожидания проверки одного ресурса
-       в секундах.
      - Parameter validate: Замыкание проверки пригодности ресурса по адресу.
        Завершается успешно, если ресурс пригоден для воспроизведения,
        или с ошибкой — иначе.
      */
     init(
         items: Items,
-        timeout: TimeInterval,
         validate: @escaping (URL) async throws -> Void
     ) {
         self.items = items
-        self.timeout = timeout
         self.validate = validate
     }
 

@@ -130,7 +130,7 @@ final class AVAssetValidatorTests: XCTestCase {
 
     func testValidationSuccess() async throws {
         let items = MockItems(urls: [1: URL(string: "https://example.com/1")!])
-        let validator = AVAssetValidator(items: items, timeout: 5) { _ in
+        let validator = AVAssetValidator(items: items) { _ in
             items.recordAttempt(at: 1)
         }
         let changes = validator.changes()
@@ -147,7 +147,7 @@ final class AVAssetValidatorTests: XCTestCase {
 
     func testValidationFailure() async throws {
         let items = MockItems(urls: [1: URL(string: "https://example.com/1")!])
-        let validator = AVAssetValidator(items: items, timeout: 5) { _ in
+        let validator = AVAssetValidator(items: items) { _ in
             throw URLError(.badURL)
         }
         let changes = validator.changes()
@@ -162,7 +162,7 @@ final class AVAssetValidatorTests: XCTestCase {
 
     func testDuplicateRequestIgnored() async throws {
         let items = MockItems(urls: [1: URL(string: "https://example.com/1")!])
-        let validator = AVAssetValidator(items: items, timeout: 5) { _ in
+        let validator = AVAssetValidator(items: items) { _ in
             items.recordAttempt(at: 1)
         }
         let changes = validator.changes()
@@ -180,7 +180,7 @@ final class AVAssetValidatorTests: XCTestCase {
             1: URL(string: "https://example.com/1")!,
             2: URL(string: "https://example.com/2")!,
         ])
-        let validator = AVAssetValidator(items: items, timeout: 5) { _ in }
+        let validator = AVAssetValidator(items: items) { _ in }
 
         validator.requestValidation(at: 1)
         validator.requestValidation(at: 2)
@@ -191,7 +191,7 @@ final class AVAssetValidatorTests: XCTestCase {
 
     func testCancelValidation() async throws {
         let items = MockItems(urls: [1: URL(string: "https://example.com/1")!])
-        let validator = AVAssetValidator(items: items, timeout: 5) { _ in
+        let validator = AVAssetValidator(items: items) { _ in
             items.recordAttempt(at: 1)
             // проверка «зависает», пока её не отменят
             try await Task.sleep(nanoseconds: 10_000_000_000)
@@ -215,7 +215,7 @@ final class AVAssetValidatorTests: XCTestCase {
     func testKnownStatusSkipped() async throws {
         let items = MockItems(urls: [1: URL(string: "https://example.com/1")!])
         items.setStatus(.readyToPlay, at: 1)
-        let validator = AVAssetValidator(items: items, timeout: 5) { _ in }
+        let validator = AVAssetValidator(items: items) { _ in }
         let changes = validator.changes()
 
         validator.requestValidation(at: 1)
@@ -231,7 +231,7 @@ final class AVAssetValidatorTests: XCTestCase {
             1: URL(string: "https://example.com/1")!,
             2: URL(string: "https://example.com/2")!,
         ])
-        let validator = AVAssetValidator(items: items, timeout: 5) { url in
+        let validator = AVAssetValidator(items: items) { url in
             // проверка первого ресурса «зависает», пока её не отменят
             if url.absoluteString.hasSuffix("1") {
                 try await Task.sleep(nanoseconds: 10_000_000_000)
