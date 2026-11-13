@@ -70,9 +70,12 @@ public final class AVAssetValidator<Items: AVAssetStatusManageableItems> {
      - Parameter items: Коллекция проверяемых ресурсов с управлением
        состояниями.
      - Parameter timeout: Замыкание максимального времени ожидания проверки
-       одного ресурса в секундах.
+       одного ресурса в секундах. Значение по умолчанию — `5.0`.
      */
-    public convenience init(items: Items, timeout: @escaping @autoclosure () -> TimeInterval) {
+    public convenience init(
+        items: Items,
+        timeout: @escaping @autoclosure () -> TimeInterval = 5.0
+    ) {
         self.init(items: items) { url in
             try await AVAsset(url: url).validatePlayability(timeout: timeout())
         }
