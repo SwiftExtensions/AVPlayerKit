@@ -103,6 +103,8 @@ open class PlayerViewController: UIViewController {
                 self.playerStallsObserver = nil
             }
         }
+        
+        self.setupRetryButton()
     }
     
     private func startPlayerStatusObserving() {
@@ -122,6 +124,7 @@ open class PlayerViewController: UIViewController {
             } else {
                 self.statusView.hideStatusInfo()
             }
+            self.updateRetryButtonVisibility(playerItem: self.playerItem)
         }
     }
     
@@ -182,6 +185,7 @@ open class PlayerViewController: UIViewController {
             } else {
                 self.statusView.hideStatusInfo()
             }
+            self.updateRetryButtonVisibility(playerItem: playerItem)
         }
     }
     
@@ -251,6 +255,41 @@ open class PlayerViewController: UIViewController {
         _ delegate: AVPictureInPictureControllerEventDelegate
     ) {
         self.pipController?.setDelegate(delegate)
+    }
+    /**
+     Настраивает кнопку перезапуска потока и добавляет её обработчик.
+     
+     Кнопка размещается под надписью состояния в ``PlayerStatusView``.
+     */
+    private func setupRetryButton() {
+        self.controlsView.setupRetryButton(below: self.statusView.infoLabel)
+        self.controlsView.retryButton.addTarget(
+            self,
+            action: #selector(self.retryButtonPressed(_:)),
+            for: .touchUpInside
+        )
+    }
+    /**
+     Обновляет видимость кнопки перезапуска потока.
+     
+     Кнопка отображается при ошибке плеера или элемента воспроизведения.
+     
+     - Parameter playerItem: Проверяемый элемент воспроизведения.
+     Передаётся параметром, так как обработчик статуса может быть вызван
+     до завершения присваивания `self.playerItem`.
+     */
+    private func updateRetryButtonVisibility(playerItem: AVPlayerItem?) {
+        let isFailed = self.player?.status == .failed
+            || playerItem?.status == .failed
+        self.controlsView.retryButton.isHidden = !isFailed
+    }
+    /**
+     Обрабатывает нажатие кнопки перезапуска потока.
+     - Parameter sender: Кнопка, отправившая событие нажатия.
+     */
+    @objc private func retryButtonPressed(_ sender: UIButton) {
+        sender.isHidden = true
+        self.player?.retryPlayback()
     }
     
     
