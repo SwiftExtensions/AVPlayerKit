@@ -38,6 +38,23 @@ public class PlayerControlsView: UIView {
         
         return button
     }()
+    /**
+     Кнопка перезапуска воспроизведения потока.
+     
+     Отображается при ошибке воспроизведения.
+     */
+    public private(set) lazy var retryButton: UIButton = {
+        let button = UIButton()
+        button.backgroundColor = .black.withAlphaComponent(0.65)
+        button.tintColor = .white
+        button.layer.cornerRadius = 8.0
+        let imageConfig = UIImage.SymbolConfiguration(scale: .large)
+        let image = UIImage(systemName: "arrow.clockwise")
+        button.setImage(image?.applyingSymbolConfiguration(imageConfig), for: .normal)
+        button.isHidden = true
+        
+        return button
+    }()
     
     /**
      Настраивает `routePickerView` и добавляет представление в иерархию при отсутствии.
@@ -84,6 +101,30 @@ public class PlayerControlsView: UIView {
             self.pipButton.topAnchor.constraint(
                 equalTo: self.safeAreaLayoutGuide.topAnchor,
                 constant: 8.0
+            ),
+        ])
+    }
+    /**
+     Настраивает `retryButton` и добавляет кнопку в иерархию при отсутствии.
+     
+     Размещает кнопку по центру представления под указанным представлением.
+     - Parameter sibling: Представление, под которым размещается кнопка.
+     */
+    func setupRetryButton(below sibling: UIView) {
+        if self.subviews.contains(self.retryButton) { return }
+        
+        self.retryButton.translatesAutoresizingMaskIntoConstraints = false
+        self.addSubview(self.retryButton)
+        
+        NSLayoutConstraint.activate([
+            self.retryButton.heightAnchor.constraint(equalToConstant: 44.0),
+            self.retryButton.widthAnchor.constraint(
+                equalTo: self.retryButton.heightAnchor
+            ),
+            self.retryButton.centerXAnchor.constraint(equalTo: self.centerXAnchor),
+            self.retryButton.topAnchor.constraint(
+                equalTo: sibling.bottomAnchor,
+                constant: 16.0
             ),
         ])
     }
