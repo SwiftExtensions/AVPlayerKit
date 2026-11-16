@@ -62,6 +62,29 @@ public extension AVPlayer {
     func removeCurrentItem() {
         self.replaceCurrentItem(with: nil)
     }
+    /**
+     Перезапускает воспроизведение текущего элемента плеера.
+     
+     Создаёт новый элемент воспроизведения из ресурса текущего элемента,
+     заменяет им `currentItem` и начинает воспроизведение.
+     Ресурс используется повторно, что сохраняет настройки
+     делегата загрузчика ресурсов, например ``AVAssetLoaderInterceptor``.
+     
+     Используется для перезапуска потока после ошибки:
+     элемент в состоянии `.failed` не может продолжить воспроизведение.
+     
+     - Returns: Новый элемент воспроизведения или `nil`, если `currentItem` отсутствует.
+     */
+    @discardableResult
+    func retryPlayback() -> AVPlayerItem? {
+        guard let currentItem = self.currentItem else { return nil }
+        
+        let playerItem = AVPlayerItem(asset: currentItem.asset)
+        self.replaceCurrentItem(with: playerItem)
+        self.play()
+        
+        return playerItem
+    }
     
     
 }
