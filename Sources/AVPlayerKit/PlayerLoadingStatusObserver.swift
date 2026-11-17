@@ -8,52 +8,54 @@ import AVFoundation
 /**
  Наблюдатель статуса загрузки плеера.
 
- Отслеживает жизненный цикл загрузки и собирает метрики,
- сообщая о событиях через ``statusHandler``:
+ Отслеживает зависание плеера с помощью ``PlayerStallsObserver``
+ и сообщает о жизненном цикле загрузки через ``statusHandler``:
 
- - причина ожидания плеера и длительность ожидания;
- - объём загруженных данных и скорость сети из журнала доступа;
- - длительность буферизованных данных.
+ - `started` — плеер ожидает данные дольше ``stallDelay``;
+ - `updated` — метрики загрузки: причина ожидания и длительность
+   ожидания, объём загруженных данных и скорость сети из журнала
+   доступа, длительность буферизованных данных;
+ - `finished` — загрузка завершилась;
+ - `interrupted` — отслеживание прервано другим статусом.
 
- Строка метрик предназначена для отображения пользователю во время
+ Метрики предназначены для отображения пользователю во время
  длительного ожидания загрузки, чтобы отличить продолжающуюся
  загрузку от зависания приложения.
 
  ### Пример
  ```swift
  let observer = PlayerLoadingStatusObserver()
- observer.delay = 3.0
- observer.statusHandler = { event in
-     switch event {
-     case .started:
+ observer.metricsDelay = 3.0
+ observer.statusHandler = { status in
+     switch status {
+     case .stalled:
          // Показать индикатор загрузки
-     case .updated(let info):
-         // Отобразить info или очистить текст при nil
+     case .loading(let info):
+         // Отобразить метрики загрузки
      case .finished:
          // Скрыть индикатор загрузки
      case .interrupted:
          // Отслеживание прервано другим статусом
      }
  }
- observer.start(player: player)
+ observer.register(player: player)
  ```
  */
 public class PlayerLoadingStatusObserver {
     /**
-     Событие жизненного цикла загрузки.
+     Статус загрузки плеера.
      */
     public enum Status {
         /**
-         Загрузка началась: плеер ожидает данные.
+         Зависание: плеер ожидает данные дольше ``stallDelay``.
          */
-        case started
+        case stalled
         /**
          Метрики загрузки обновились.
 
-         - Parameter info: Текст метрик или `nil`,
-           если метрики ещё не должны отображаться.
+         - Parameter info: Текст метрик.
          */
-        case updated(info: String?)
+        case loading(info: String)
         /**
          Загрузка завершилась.
          */
@@ -62,20 +64,54 @@ public class PlayerLoadingStatusObserver {
          Отслеживание загрузки прервано другим статусом.
          */
         case interrupted
+        
+        
     }
 
+    /**
+     Задержка в секундах перед сообщением о начале загрузки.
+
+     Позволяет сгладить краткосрочные паузы воспроизведения:
+     зависания короче задержки не учитываются.
+     Значение по умолчанию — `1.0`.
+     */
+    public var stallDelay: TimeInterval {
+        get { self.stallsObserver?.delayTimeInterval ?? 1.0 }
+        set { self.stallsObserver?.delayTimeInterval = newValue }
+    }
     /**
      Задержка в секундах перед первой передачей метрик.
 
      Метрики отображаются только при длительном ожидании данных.
      Значение по умолчанию — `5.0`.
      */
-    public var delay: TimeInterval = 5.0
+    public var metricsDelay: TimeInterval = 5.0
     /**
-     Обработчик событий жизненного цикла загрузки.
+     Обработчик изменений статуса загрузки.
      */
     public var statusHandler: ((Status) -> Void)?
 
+    /**
+     Наблюдатель зависаний плеера.
+
+     Создается при регистрации плеера и освобождается
+     при окончании отслеживания.
+     */
+    private var stallsObserver: PlayerStallsObserver?
+    /**
+     Зарегистрированный экземпляр плеера.
+
+     Хранится слабой ссылкой.
+     */
+    private weak var player: AVPlayer?
+    /**
+     Таймер периодического сбора метрик загрузки.
+     */
+    private weak var metricsTimer: Timer?
+    /**
+     Дата начала текущего ожидания загрузки.
+     */
+    private var startDate: Date?
     /**
      Признак того, что загрузка идёт.
 
@@ -83,20 +119,12 @@ public class PlayerLoadingStatusObserver {
      */
     private var isInProgress = false
     /**
-     Зарегистрированный экземпляр плеера.
+     Признак того, что статус загрузки уступил другому статусу.
 
-     Хранится слабой ссылкой. Элемент воспроизведения берётся
-     из currentItem плеера, отдельная передача не требуется.
+     Влияет на итоговое событие: вместо `finished`
+     будет доставлено `interrupted`.
      */
-    private weak var player: AVPlayer?
-    /**
-     Дата начала текущего ожидания загрузки.
-     */
-    private var startDate: Date?
-    /**
-     Таймер периодического сбора метрик загрузки.
-     */
-    private weak var timer: Timer?
+    private var isDismissed = false
 
     /**
      Создает экземпляр наблюдателя статуса загрузки плеера.
@@ -104,30 +132,44 @@ public class PlayerLoadingStatusObserver {
     public init() { }
 
     deinit {
-        self.timer?.invalidate()
+        self.metricsTimer?.invalidate()
     }
 
     /**
-     Начинает отслеживание загрузки.
+     Регистрирует плеер для отслеживания загрузки.
 
-     - Parameter player: Плеер, для которого собираются метрики.
-       Может быть `nil`.
+     Наблюдение за прежним плеером прекращается.
+     Если плеер уже ожидает данных, загрузка будет сообщена
+     с задержкой ``stallDelay``.
+
+     - Parameter player: Плеер, для которого отслеживается загрузка.
      */
-    public func start(player: AVPlayer?) {
-        self.isInProgress = true
-        self.statusHandler?(.started)
-        guard let player else { return }
-        self.register(player: player)
+    public func register(player: AVPlayer) {
+        self.metricsTimer?.invalidate()
+        self.metricsTimer = nil
+        self.startDate = nil
+        self.isInProgress = false
+        self.isDismissed = false
+        self.player = player
+
+        let stallsObserver = PlayerStallsObserver()
+        self.stallsObserver = stallsObserver
+        stallsObserver.startObserving(player: player) { [weak self] isStalled in
+            self?.handleStallChange(isStalled)
+        }
     }
     /**
      Заканчивает отслеживание загрузки.
 
-     Останавливает сбор метрик и сообщает о завершении загрузки.
-     Если отслеживание было прервано другим статусом,
+     Останавливает наблюдение и сообщает о завершении загрузки.
+     Если статус загрузки уступил другому статусу,
      сообщает о прерывании.
      */
     public func stop() {
-        self.stopUpdates()
+        self.stallsObserver = nil
+        self.metricsTimer?.invalidate()
+        self.metricsTimer = nil
+        self.startDate = nil
         defer { self.isInProgress = false }
         guard self.isInProgress else {
             self.statusHandler?(.interrupted)
@@ -136,61 +178,85 @@ public class PlayerLoadingStatusObserver {
         self.statusHandler?(.finished)
     }
     /**
-     Прерывает отслеживание загрузки.
+     Прерывает отображение статуса загрузки.
 
      Применяется, когда статус загрузки уступает другому статусу
-     (например, ошибке). Сбор метрик останавливается.
+     (например, ошибке). Сбор метрик останавливается, а по окончании
+     ожидания вместо `finished` будет доставлено `interrupted`.
      */
     public func dismiss() {
-        self.stopUpdates()
-        self.isInProgress = false
+        self.metricsTimer?.invalidate()
+        self.metricsTimer = nil
+        self.startDate = nil
+        self.isDismissed = true
+    }
+
+    /**
+     Обрабатывает изменение состояния зависания плеера.
+
+     - Parameter isStalled: Признак того, что плеер ожидает данные.
+     */
+    private func handleStallChange(_ isStalled: Bool) {
+        if isStalled {
+            guard !self.isInProgress else { return }
+            self.beginStall()
+        } else {
+            guard self.isInProgress else { return }
+            self.finish()
+        }
     }
     /**
-     Обновляет плеер, для которого собираются метрики загрузки.
-
-     - Parameter player: Плеер, для которого собираются метрики.
+     Фиксирует зависание: запускает сбор метрик
+     и сообщает статус.
      */
-    public func register(player: AVPlayer) {
-        self.stopUpdates()
-        self.player = player
+    private func beginStall() {
+        self.isInProgress = true
         self.startDate = Date()
-        self.update()
-
+        self.setupMetricsTimer()
+        self.statusHandler?(.stalled)
+    }
+    /**
+     Завершает отсчёт загрузки и сообщает итоговое событие.
+     */
+    private func finish() {
+        self.isInProgress = false
+        self.metricsTimer?.invalidate()
+        self.metricsTimer = nil
+        self.startDate = nil
+        defer { self.isDismissed = false }
+        if self.isDismissed {
+            self.statusHandler?(.interrupted)
+        } else {
+            self.statusHandler?(.finished)
+        }
+    }
+    /**
+     Настраивает таймер периодического сбора метрик загрузки.
+     */
+    private func setupMetricsTimer() {
         let timer = Timer(
             timeInterval: 1.0,
             repeats: true
         ) { [weak self] _ in
             self?.update()
         }
-        self.timer = timer
+        self.metricsTimer = timer
         RunLoop.main.add(timer, forMode: .common)
     }
-
     /**
-     Останавливает сбор метрик загрузки.
-     */
-    private func stopUpdates() {
-        self.timer?.invalidate()
-        self.timer = nil
-        self.startDate = nil
-    }
-    /**
-     Собирает актуальные метрики загрузки и сообщает событие.
+     Собирает актуальные метрики загрузки и сообщает статус.
      */
     private func update() {
         guard self.player != nil else {
-            self.stopUpdates()
-            self.statusHandler?(.updated(info: nil))
+            self.metricsTimer?.invalidate()
+            self.metricsTimer = nil
             return
         }
 
         let elapsed = self.startDate.map {
             Date().timeIntervalSince($0)
         } ?? 0
-        guard elapsed >= self.delay else {
-            self.statusHandler?(.updated(info: nil))
-            return
-        }
+        guard elapsed >= self.metricsDelay else { return }
 
         let reason = self.player?.reasonForWaitingToPlay
         let reasonText = reason?.displayDescription ?? "Загрузка"
@@ -201,7 +267,7 @@ public class PlayerLoadingStatusObserver {
             lines.append(metrics)
         }
 
-        self.statusHandler?(.updated(info: lines.joined(separator: "\n")))
+        self.statusHandler?(.loading(info: lines.joined(separator: "\n")))
     }
     /**
      Собирает строку сетевых метрик и состояния буфера.
