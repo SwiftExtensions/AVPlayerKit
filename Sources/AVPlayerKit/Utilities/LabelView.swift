@@ -142,6 +142,7 @@ open class LabelView: UIStackView {
     public var directionalContentInsets: NSDirectionalEdgeInsets {
         get { self.directionalLayoutMargins }
         set {
+            self.insetsLayoutMarginsFromSafeArea = false
             self.directionalLayoutMargins = newValue
             self.isLayoutMarginsRelativeArrangement = true
         }
@@ -214,6 +215,15 @@ open class LabelView: UIStackView {
         to keyPath: WritableKeyPath<UILabel, Value>
     ) {
         self.label[keyPath: keyPath] = value
+    }
+    /**
+     Очищает содержимое метки.
+     
+     Сбрасывает изображение и текст.
+     */
+    public func clear() {
+        self.image = nil
+        self.title = nil
     }
     
     
