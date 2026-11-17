@@ -28,6 +28,44 @@ public extension AVPlayerItem {
     func durationWatched() -> TimeInterval? {
         self.accessLog()?.events.map(\.durationWatched).reduce(0, +)
     }
+    /**
+     Суммарное количество байт, загруженных элементом воспроизведения.
+     
+     Значение вычисляется по событиям
+     [журнала доступа](https://developer.apple.com/documentation/avfoundation/avplayeritemaccesslog)
+     и позволяет оценить объём данных, полученных из сети.
+     
+     - Returns: Общее количество загруженных байт или `nil`,
+       если журнал доступа отсутствует либо ещё не содержит событий.
+     */
+    func totalBytesTransferred() -> Int64? {
+        guard let events = self.accessLog()?.events, !events.isEmpty else {
+            return nil
+        }
+        
+        return events.reduce(Int64(0)) {
+            $0 + Int64($1.numberOfBytesTransferred)
+        }
+    }
+    /**
+     Длительность контента в секундах, загруженного вперёд от текущей позиции.
+     
+     Значение вычисляется по последнему диапазону
+     [loadedTimeRanges](https://developer.apple.com/documentation/avfoundation/avplayeritem/1387554-loadedtimeranges)
+     относительно текущей позиции воспроизведения.
+     
+     - Returns: Количество секунд буферизованных данных или `nil`,
+       если диапазоны загруженного времени недоступны.
+     */
+    func bufferedAhead() -> TimeInterval? {
+        guard let range = self.loadedTimeRanges.last?.timeRangeValue else {
+            return nil
+        }
+        
+        let ahead = CMTimeGetSeconds(range.end) - self.currentTime().seconds
+        
+        return max(ahead, 0.0)
+    }
     
     
 }
