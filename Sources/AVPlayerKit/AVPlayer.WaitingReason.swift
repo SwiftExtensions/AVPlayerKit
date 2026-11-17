@@ -9,7 +9,7 @@ extension AVPlayer.WaitingReason {
      Пользовательское описание причины ожидания воспроизведения.
      
      Предназначено для внутреннего использования при формировании
-     метрик загрузки в ``AVPlayerItemLoadingMetrics``.
+     метрик загрузки в ``PlayerLoadingStatusObserver``.
      Для внешнего применения используйте значение самой причины
      `reasonForWaitingToPlay` — например, `.toMinimizeStalls`.
      */
