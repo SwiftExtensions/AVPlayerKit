@@ -55,9 +55,9 @@ open class PlayerViewController: UIViewController {
     public weak var playbackErrorDelegate: PlaybackErrorDelegate?
     
     /**
-     Наблюдатель зависаний плеера.
+     Наблюдатель статуса загрузки плеера.
      */
-    private var playerStallsObserver: PlayerStallsObserver!
+    private lazy var loadingStatusObserver = PlayerLoadingStatusObserver()
     /**
      Контроллер, управляющий выбором маршрута воспроизведения.
      */
@@ -94,27 +94,58 @@ open class PlayerViewController: UIViewController {
         self.startExternalPlaybackObserving()
         self.startPlayerItemObserving()
         self.startPlayerItemStatusObserving()
+
+        self.loadingStatusObserver.statusHandler = { [weak self] status in
+            self?.handleLoadingStatus(status)
+        }
         
         self.$playerView.addObserver(self, keyPath: \.player) { [unowned self] playerView, _ in
             self.player = playerView.player
             if let player = playerView.player {
-                self.startPlayerStallsObserving(player: player)
+                self.loadingStatusObserver.register(player: player)
             } else {
-                self.playerStallsObserver = nil
+                // Плеер удалён вместе с элементом воспроизведения,
+                // событие окончания загрузки не придёт.
+                self.loadingStatusObserver.stop()
             }
         }
         
         self.setupRetryButton()
     }
     
+    /**
+     Отображает информацию о состоянии плеера.
+
+     Прерывает отображение информации о загрузке,
+     если оно было начато.
+
+     - Parameter image: Изображение статуса.
+     - Parameter title: Текст статуса.
+     */
+    private func showStatusInfo(
+        image: UIImage?,
+        title: String?,
+        animated: Bool = false
+    ) {
+        self.loadingStatusObserver.dismiss()
+        self.statusView.showStatusInfo(
+            image: image,
+            title: title,
+            animated: animated
+        )
+    }
+    /**
+     Начинает наблюдение за статусом плеера.
+     */
     private func startPlayerStatusObserving() {
         self.$player.addObserver(self, keyPath: \.status) { [unowned self] player, _ in
             if player.status == .failed {
                 let imageConfig = UIImage.SymbolConfiguration(scale: .large)
                 let image = UIImage(systemName: "play.slash.fill")
-                self.statusView.showStatusInfo(
+                self.showStatusInfo(
                     image: image?.applyingSymbolConfiguration(imageConfig),
-                    title: player.error?.localizedDescription ?? "Неизвестная ошибка."
+                    title: player.error?.localizedDescription ?? "Неизвестная ошибка.",
+                    animated: true
                 )
                 self.playbackErrorDelegate?.playerViewController(
                     self,
@@ -122,7 +153,7 @@ open class PlayerViewController: UIViewController {
                     didFailWith: player.error
                 )
             } else {
-                self.statusView.hideStatusInfo()
+                self.statusView.hideStatusInfo(animated: true)
             }
             self.updateRetryButtonVisibility(playerItem: self.playerItem)
         }
@@ -145,12 +176,12 @@ open class PlayerViewController: UIViewController {
             let deviceName = route.outputs.first?.portName ?? "(не определено)"
             let imageConfig = UIImage.SymbolConfiguration(scale: .large)
             let image = UIImage(systemName: "airplayvideo")
-            self.statusView.showStatusInfo(
+            self.showStatusInfo(
                 image: image?.applyingSymbolConfiguration(imageConfig),
                 title: "Идет трансляция на внешнем устройстройстве: \(deviceName)."
             )
         } else {
-            self.statusView.hideStatusInfo()
+            self.statusView.hideStatusInfo(animated: true)
         }
     }
     
@@ -161,6 +192,9 @@ open class PlayerViewController: UIViewController {
             options: [.initial]
         ) { [unowned self] player, _ in
             self.playerItem = player.currentItem
+            // Замена элемента воспроизведения перезапускает наблюдение
+            // за загрузкой: состояние старого элемента неактуально.
+            self.loadingStatusObserver.register(player: player)
         }
     }
     
@@ -173,9 +207,10 @@ open class PlayerViewController: UIViewController {
             if playerItem.status == .failed {
                 let imageConfig = UIImage.SymbolConfiguration(scale: .large)
                 let image = UIImage(systemName: "play.slash.fill")
-                self.statusView.showStatusInfo(
+                self.showStatusInfo(
                     image: image?.applyingSymbolConfiguration(imageConfig),
-                    title: playerItem.error?.localizedDescription ?? "Неизвестная ошибка."
+                    title: playerItem.error?.localizedDescription ?? "Неизвестная ошибка.",
+                    animated: true
                 )
                 self.playbackErrorDelegate?.playerViewController(
                     self,
@@ -183,23 +218,31 @@ open class PlayerViewController: UIViewController {
                     didFailWith: playerItem.error
                 )
             } else {
-                self.statusView.hideStatusInfo()
+                self.statusView.hideStatusInfo(animated: true)
             }
             self.updateRetryButtonVisibility(playerItem: playerItem)
         }
     }
     
-    private func startPlayerStallsObserving(player: AVPlayer) {
-        self.playerStallsObserver = PlayerStallsObserver()
-        self.playerStallsObserver.startObserving(player: player) { [unowned self] isStalled in
-            self.handlePlayerStallStateUpdate(isStalled)
-        }
-    }
-    
-    private func handlePlayerStallStateUpdate(_ isStalled: Bool) {
-        if isStalled {
+    /**
+     Применяет изменение статуса загрузки к представлениям.
+
+     - Parameter status: Статус.
+     */
+    private func handleLoadingStatus(_ status: PlayerLoadingStatusObserver.Status) {
+        switch status {
+        case .stalled:
             self.statusView.startLoadingAnimation()
-        } else {
+        case .loading(let info):
+            let animated = self.statusView.infoLabel.title == nil
+            self.statusView.showStatusInfo(
+                image: nil,
+                title: info,
+                animated: animated
+            )
+        case .finished:
+            self.statusView.hideStatusInfo(animated: true)
+        case .interrupted:
             self.statusView.stopLoadingAnimation()
         }
     }
@@ -273,6 +316,8 @@ open class PlayerViewController: UIViewController {
      Обновляет видимость кнопки перезапуска потока.
      
      Кнопка отображается при ошибке плеера или элемента воспроизведения.
+     Появление кнопки анимировано и задержано — сначала показывается
+     текст ошибки, затем кнопка.
      
      - Parameter playerItem: Проверяемый элемент воспроизведения.
      Передаётся параметром, так как обработчик статуса может быть вызван
@@ -281,7 +326,18 @@ open class PlayerViewController: UIViewController {
     private func updateRetryButtonVisibility(playerItem: AVPlayerItem?) {
         let isFailed = self.player?.status == .failed
             || playerItem?.status == .failed
-        self.controlsView.retryButton.isHidden = !isFailed
+        guard isFailed else {
+            self.controlsView.retryButton.alpha = 1.0
+            self.controlsView.retryButton.isHidden = true
+            return
+        }
+        
+        guard self.controlsView.retryButton.isHidden else { return }
+        self.controlsView.retryButton.alpha = 0.0
+        self.controlsView.retryButton.isHidden = false
+        UIView.animate(withDuration: 0.3, delay: 1.0, options: []) {
+            self.controlsView.retryButton.alpha = 1.0
+        }
     }
     /**
      Обрабатывает нажатие кнопки перезапуска потока.
