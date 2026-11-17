@@ -23,6 +23,12 @@ public class PlayerStatusView: UIView {
         label.numberOfLines = 0
         label.font = .preferredFont(forTextStyle: .footnote)
         label.textAlignment = .center
+        label.directionalContentInsets = NSDirectionalEdgeInsets(
+            top: 8.0,
+            leading: 12.0,
+            bottom: 8.0,
+            trailing: 12.0
+        )
 //        label.adjustsFontForContentSizeCategory = true
         label.activityView.color = .white
         label.isHidden = true
