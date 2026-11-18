@@ -10,6 +10,27 @@ import AVKit
  */
 open class PlayerViewController: UIViewController {
     /**
+     Вариант отображения статуса загрузки.
+     */
+    public enum LoadingDisplayStyle {
+        /**
+         Статус загрузки не отображается.
+         */
+        case hidden
+        /**
+         Отображается только индикатор загрузки без текста.
+         */
+        case indicator
+        /**
+         Отображаются индикатор загрузки и подробная
+         статистика ожидания.
+         */
+        case detailed
+
+
+    }
+    
+    /**
      Источник данных для контроллера режима «картинка в картинке».
      
      Для управления восстановлением пользовательского интерфейса
@@ -53,7 +74,26 @@ open class PlayerViewController: UIViewController {
      Делегат, сообщающий об ошибках воспроизведения.
      */
     public weak var playbackErrorDelegate: PlaybackErrorDelegate?
-    
+
+    /**
+     Вариант отображения статуса загрузки.
+
+     Значение по умолчанию — ``LoadingDisplayStyle/detailed``.
+     */
+    public var loadingDisplayStyle: LoadingDisplayStyle = .detailed {
+        didSet {
+            self.statusController?.loadingDisplayStyle =
+                self.loadingDisplayStyle
+        }
+    }
+
+    /**
+     Контроллер отображения статуса плеера.
+
+     Управляет ``statusView`` и определяет, какое содержимое
+     отображает информационная метка.
+     */
+    private var statusController: PlayerStatusController?
     /**
      Наблюдатель статуса загрузки плеера.
      */
@@ -81,6 +121,10 @@ open class PlayerViewController: UIViewController {
         let statusView = PlayerStatusView()
         self.statusView = statusView
         statusView.insert(into: self.view)
+
+        let statusController = PlayerStatusController(statusView: statusView)
+        statusController.loadingDisplayStyle = self.loadingDisplayStyle
+        self.statusController = statusController
         
         let controlsView = PlayerControlsView()
         self.controlsView = controlsView
@@ -96,7 +140,7 @@ open class PlayerViewController: UIViewController {
         self.startPlayerItemStatusObserving()
 
         self.loadingStatusObserver.statusHandler = { [weak self] status in
-            self?.handleLoadingStatus(status)
+            self?.statusController?.handleLoadingStatus(status)
         }
         
         self.$playerView.addObserver(self, keyPath: \.player) { [unowned self] playerView, _ in
@@ -128,11 +172,18 @@ open class PlayerViewController: UIViewController {
         animated: Bool = false
     ) {
         self.loadingStatusObserver.dismiss()
-        self.statusView.showStatusInfo(
+        self.statusController?.showMessage(
             image: image,
             title: title,
             animated: animated
         )
+    }
+    /**
+     Скрывает информацию о состоянии плеера.
+     - Parameter animated: Признак анимированного скрытия метки.
+     */
+    private func hideStatusInfo(animated: Bool = false) {
+        self.statusController?.hideStatusInfo(animated: animated)
     }
     /**
      Начинает наблюдение за статусом плеера.
@@ -153,7 +204,7 @@ open class PlayerViewController: UIViewController {
                     didFailWith: player.error
                 )
             } else {
-                self.statusView.hideStatusInfo(animated: true)
+                self.hideStatusInfo(animated: true)
             }
             self.updateRetryButtonVisibility(playerItem: self.playerItem)
         }
@@ -181,7 +232,7 @@ open class PlayerViewController: UIViewController {
                 title: "Идет трансляция на внешнем устройстройстве: \(deviceName)."
             )
         } else {
-            self.statusView.hideStatusInfo(animated: true)
+            self.hideStatusInfo(animated: true)
         }
     }
     
@@ -218,34 +269,12 @@ open class PlayerViewController: UIViewController {
                     didFailWith: playerItem.error
                 )
             } else {
-                self.statusView.hideStatusInfo(animated: true)
+                self.hideStatusInfo(animated: true)
             }
             self.updateRetryButtonVisibility(playerItem: playerItem)
         }
     }
     
-    /**
-     Применяет изменение статуса загрузки к представлениям.
-
-     - Parameter status: Статус.
-     */
-    private func handleLoadingStatus(_ status: PlayerLoadingStatusObserver.Status) {
-        switch status {
-        case .stalled:
-            self.statusView.startLoadingAnimation()
-        case .loading(let info):
-            let animated = self.statusView.infoLabel.title == nil
-            self.statusView.showStatusInfo(
-                image: nil,
-                title: info,
-                animated: animated
-            )
-        case .finished:
-            self.statusView.hideStatusInfo(animated: true)
-        case .interrupted:
-            self.statusView.stopLoadingAnimation()
-        }
-    }
     /**
      Включает поддержку AirPlay и отображение кнопки AirPlay.
      Настраивает обработчики событий выбора маршрута.

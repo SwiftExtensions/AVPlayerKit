@@ -17,10 +17,7 @@ public class PlayerStatusView: UIView {
         label.spacing = 12.0
         label.tintColor = .white
         label.textColor = .white
-        var background = UIBackgroundConfiguration.clear()
-        background.backgroundColor = .black
-        background.cornerRadius = 12.0
-        label.background = background
+        label.background = self.infoBackground
         label.layer.masksToBounds = true
         label.numberOfLines = 0
         label.font = .preferredFont(forTextStyle: .footnote)
@@ -37,7 +34,32 @@ public class PlayerStatusView: UIView {
         
         return label
     }()
-    
+    /**
+     Фон информационной метки.
+     */
+    private let infoBackground: UIBackgroundConfiguration = {
+        var background = UIBackgroundConfiguration.clear()
+        background.backgroundColor = .black
+        background.cornerRadius = 12.0
+
+        return background
+    }()
+    /**
+     Признак отображения фона у информационной метки.
+
+     Фон отображается только при наличии содержимого:
+     текста или изображения. При отображении одного
+     индикатора загрузки фон отключён.
+     Значение по умолчанию — `true`.
+     */
+    /**
+     Признак отображения фона у индикатора загрузки.
+
+     Применяется, когда метка отображает только индикатор
+     без содержимого. Значение по умолчанию — `true`.
+     */
+    var showsLoadingIndicatorBackground = true
+
     
     public override init(frame: CGRect) {
         super.init(frame: frame)
@@ -69,6 +91,9 @@ public class PlayerStatusView: UIView {
     }
     
     func startLoadingAnimation() {
+        self.infoLabel.background = self.showsLoadingIndicatorBackground
+            ? self.infoBackground
+            : nil
         self.infoLabel.startActivityAnimating()
     }
     
@@ -93,6 +118,7 @@ public class PlayerStatusView: UIView {
         title: String?,
         animated: Bool = false
     ) {
+        self.infoLabel.background = self.infoBackground
         self.infoLabel.show(image: image, title: title, animated: animated)
     }
     /**
