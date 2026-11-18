@@ -5,6 +5,7 @@
 //  Created by Алгашев Александр on 19.12.2024.
 //
 
+import ActivityLabel
 import UIKit
 
 /**
@@ -16,18 +17,19 @@ public class PlayerStatusView: UIView {
         label.spacing = 12.0
         label.tintColor = .white
         label.textColor = .white
-        label.backgroundColor = .black
-        label.layer.cornerCurve = .continuous
-        label.layer.cornerRadius = 8.0
+        var background = UIBackgroundConfiguration.clear()
+        background.backgroundColor = .black
+        background.cornerRadius = 12.0
+        label.background = background
         label.layer.masksToBounds = true
         label.numberOfLines = 0
         label.font = .preferredFont(forTextStyle: .footnote)
         label.textAlignment = .center
         label.directionalContentInsets = NSDirectionalEdgeInsets(
-            top: 8.0,
-            leading: 12.0,
-            bottom: 8.0,
-            trailing: 12.0
+            top:      16.0,
+            leading:  16.0,
+            bottom:   16.0,
+            trailing: 16.0
         )
 //        label.adjustsFontForContentSizeCategory = true
         label.activityView.color = .white
@@ -67,11 +69,11 @@ public class PlayerStatusView: UIView {
     }
     
     func startLoadingAnimation() {
-        self.infoLabel.startActivityAnimation()
+        self.infoLabel.startActivityAnimating()
     }
     
     func stopLoadingAnimation() {
-        self.infoLabel.stopActivityAnimation()
+        self.infoLabel.stopActivityAnimating()
     }
     
     /**

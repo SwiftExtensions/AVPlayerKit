@@ -193,12 +193,11 @@ public class PlayerLoadingStatusObserver {
 
     /**
      Обрабатывает изменение состояния зависания плеера.
-
      - Parameter isStalled: Признак того, что плеер ожидает данные.
      */
     private func handleStallChange(_ isStalled: Bool) {
         if isStalled {
-            guard !self.isInProgress else { return }
+            if self.isInProgress { return }
             self.beginStall()
         } else {
             guard self.isInProgress else { return }

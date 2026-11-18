@@ -1,0 +1,15 @@
+{
+  "originHash" : "3146a7cec50f3cb1590b18d6828126fbe225da22b127455768a67ada78212acd",
+  "pins" : [
+    {
+      "identity" : "activitylabel",
+      "kind" : "remoteSourceControl",
+      "location" : "git@github.com:SwiftExtensions/ActivityLabel.git",
+      "state" : {
+        "revision" : "514f3ce44b9195e454666fcfefd7455622c24675",
+        "version" : "1.0.2"
+      }
+    }
+  ],
+  "version" : 3
+}
