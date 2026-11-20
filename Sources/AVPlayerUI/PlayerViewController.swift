@@ -32,6 +32,10 @@ open class PlayerViewController: UIViewController {
     }
     
     /**
+     Делегат, сообщающий об ошибках воспроизведения.
+     */
+    public weak var playbackErrorDelegate: PlaybackErrorDelegate?
+    /**
      Источник данных для контроллера режима «картинка в картинке».
      
      Для управления восстановлением пользовательского интерфейса
@@ -41,6 +45,14 @@ open class PlayerViewController: UIViewController {
         get { self.pipController?.dataSource }
         set { self.pipController?.dataSource = newValue }
     }
+    
+    /**
+     Направляющая раскладки области статуса плеера.
+
+     Обрамляет группу `infoLabel` + `retryButton` и
+     центрирует её по центру представления.
+     */
+    public let statusLayoutGuide = UILayoutGuide()
     
     /**
      Подкласс
@@ -71,10 +83,6 @@ open class PlayerViewController: UIViewController {
      */
     @ObservedNSObject
     public private(set) var playerItem: AVPlayerItem?
-    /**
-     Делегат, сообщающий об ошибках воспроизведения.
-     */
-    public weak var playbackErrorDelegate: PlaybackErrorDelegate?
 
     /**
      Вариант отображения статуса загрузки.
@@ -96,6 +104,28 @@ open class PlayerViewController: UIViewController {
      */
     private var statusController: PlayerStatusController?
     /**
+     Признак отображения кнопки перезапуска потока.
+
+     Отражает целевую видимость кнопки: раскладка кнопки
+     может отставать — схлопывание происходит после скрытия
+     информационной метки.
+     */
+    private var isRetryButtonShown = false {
+        didSet {
+            // Во время затухания кнопка остаётся на экране —
+            // блокируем нажатия, пока она не скрылась.
+            let isShown = self.isRetryButtonShown
+            self.controlsView.retryButton.isUserInteractionEnabled = isShown
+        }
+    }
+    /**
+     Наблюдатель скрытия информационной метки.
+
+     Схлопывает область кнопки перезапуска, когда метка
+     полностью скрылась.
+     */
+    private var infoLabelHiddenObserver: NSKeyValueObservation?
+    /**
      Наблюдатель статуса загрузки плеера.
      */
     private lazy var loadingStatusObserver = PlayerLoadingStatusObserver()
@@ -115,11 +145,21 @@ open class PlayerViewController: UIViewController {
         self.view = UIView()
         self.view.backgroundColor = .black
         
+        self.view.addLayoutGuide(self.statusLayoutGuide)
+        NSLayoutConstraint.activate([
+            self.statusLayoutGuide.centerXAnchor.constraint(
+                equalTo: self.view.centerXAnchor
+            ),
+            self.statusLayoutGuide.centerYAnchor.constraint(
+                equalTo: self.view.centerYAnchor
+            ),
+        ])
+        
         let playerView = PlayerView()
         self.playerView = playerView
         playerView.insert(into: self.view)
         
-        let statusView = PlayerStatusView()
+        let statusView = PlayerStatusView(statusLayoutGuide: self.statusLayoutGuide)
         self.statusView = statusView
         statusView.insert(into: self.view)
 
@@ -335,7 +375,17 @@ open class PlayerViewController: UIViewController {
      Кнопка размещается под надписью состояния в ``PlayerStatusView``.
      */
     private func setupRetryButton() {
-        self.controlsView.setupRetryButton(below: self.statusView.infoLabel)
+        self.controlsView.setupRetryButton(
+            at: self.statusLayoutGuide,
+            below: self.statusView.infoLabel
+        )
+        self.infoLabelHiddenObserver = self.statusView.infoLabel.observe(\.isHidden)
+        { [weak self] infoLabel, _ in
+            guard let self else { return }
+            guard infoLabel.isHidden else { return }
+            if self.isRetryButtonShown { return }
+            self.controlsView.retryButton.isHidden = true
+        }
         self.controlsView.retryButton.addTarget(
             self,
             action: #selector(self.retryButtonPressed(_:)),
@@ -347,25 +397,36 @@ open class PlayerViewController: UIViewController {
      
      Кнопка отображается при ошибке плеера или элемента воспроизведения.
      Появление кнопки анимировано и задержано — сначала показывается
-     текст ошибки, затем кнопка.
+     текст ошибки, затем кнопка. Скрытие кнопки происходит затуханием
+     на месте: её область схлопывается после скрытия
+     информационной метки.
      
      - Parameter playerItem: Проверяемый элемент воспроизведения.
      Передаётся параметром, так как обработчик статуса может быть вызван
      до завершения присваивания `self.playerItem`.
      */
     private func updateRetryButtonVisibility(playerItem: AVPlayerItem?) {
-        let isFailed = self.player?.status == .failed
-            || playerItem?.status == .failed
+        let isFailed = self.player?.status == .failed || playerItem?.status == .failed
         guard isFailed else {
-            self.controlsView.retryButton.alpha = 1.0
-            self.controlsView.retryButton.isHidden = true
+            guard self.isRetryButtonShown else { return }
+            self.isRetryButtonShown = false
+            // Кнопка гаснет на месте: раскладка схлопывается
+            // позже — после скрытия информационной метки.
+            UIView.animate(withDuration: 0.3) {
+                self.controlsView.retryButton.alpha = 0.0
+            }
             return
         }
         
-        guard self.controlsView.retryButton.isHidden else { return }
+        if self.isRetryButtonShown { return }
+        self.isRetryButtonShown = true
+        
         self.controlsView.retryButton.alpha = 0.0
-        self.controlsView.retryButton.isHidden = false
         UIView.animate(withDuration: 0.3, delay: 1.0, options: []) {
+            guard self.isRetryButtonShown else { return }
+            
+            self.controlsView.retryButton.isHidden = false
+            self.view.layoutIfNeeded()
             self.controlsView.retryButton.alpha = 1.0
         }
     }
@@ -374,7 +435,13 @@ open class PlayerViewController: UIViewController {
      - Parameter sender: Кнопка, отправившая событие нажатия.
      */
     @objc private func retryButtonPressed(_ sender: UIButton) {
-        sender.isHidden = true
+        self.isRetryButtonShown = false
+        UIView.animate(withDuration: 0.3) {
+            self.controlsView.retryButton.alpha = 0.0
+        } completion: { _ in
+            guard !self.isRetryButtonShown else { return }
+            self.controlsView.retryButton.isHidden = true
+        }
         self.player?.retryPlayback()
     }
     
