@@ -40,19 +40,28 @@ public class PlayerControlsView: UIView {
     }()
     /**
      Кнопка перезапуска воспроизведения потока.
-     
+
      Отображается при ошибке воспроизведения.
+     Скрытие исключает кнопку из раскладки —
+     её высота схлопывается до нуля.
      */
-    public private(set) lazy var retryButton: UIButton = {
-        let button = UIButton()
+    public private(set) lazy var retryButton: CollapsibleButton = {
+        let button = CollapsibleButton()
+        button.directionalLayoutMargins = NSDirectionalEdgeInsets(
+            top: 16.0, leading: 0.0, bottom: 0.0, trailing: 0.0
+        )
         button.backgroundColor = .black.withAlphaComponent(0.65)
         button.tintColor = .white
         button.layer.cornerRadius = 8.0
         let imageConfig = UIImage.SymbolConfiguration(scale: .large)
         let image = UIImage(systemName: "arrow.clockwise")
         button.setImage(image?.applyingSymbolConfiguration(imageConfig), for: .normal)
-        button.isHidden = true
-        
+
+        NSLayoutConstraint.activate([
+            button.heightAnchor.constraint(equalToConstant: 44.0),
+            button.widthAnchor.constraint(equalTo: button.heightAnchor),
+        ])
+
         return button
     }()
     
@@ -105,26 +114,32 @@ public class PlayerControlsView: UIView {
         ])
     }
     /**
-     Настраивает `retryButton` и добавляет кнопку в иерархию при отсутствии.
-     
-     Размещает кнопку по центру представления под указанным представлением.
+     Настраивает `retryButton` и добавляет её обёртку в иерархию при отсутствии.
+
+     В иерархию добавляется `retryButton.stackView`: стек
+     размещается под указанным представлением, его низ
+     привязан к нижнему краю направляющей области статуса.
+     - Parameter layoutGuide: Направляющая области статуса.
      - Parameter sibling: Представление, под которым размещается кнопка.
      */
-    func setupRetryButton(below sibling: UIView) {
-        if self.subviews.contains(self.retryButton) { return }
-        
-        self.retryButton.translatesAutoresizingMaskIntoConstraints = false
-        self.addSubview(self.retryButton)
-        
+    func setupRetryButton(
+        at layoutGuide: UILayoutGuide,
+        below sibling: UIView
+    ) {
+        if self.subviews.contains(self.retryButton.stackView) { return }
+
+        self.retryButton.stackView.translatesAutoresizingMaskIntoConstraints = false
+        self.addSubview(self.retryButton.stackView)
+
         NSLayoutConstraint.activate([
-            self.retryButton.heightAnchor.constraint(equalToConstant: 44.0),
-            self.retryButton.widthAnchor.constraint(
-                equalTo: self.retryButton.heightAnchor
+            self.retryButton.stackView.topAnchor.constraint(
+                equalTo: sibling.bottomAnchor
             ),
-            self.retryButton.centerXAnchor.constraint(equalTo: self.centerXAnchor),
-            self.retryButton.topAnchor.constraint(
-                equalTo: sibling.bottomAnchor,
-                constant: 16.0
+            self.retryButton.stackView.bottomAnchor.constraint(
+                equalTo: layoutGuide.bottomAnchor
+            ),
+            self.retryButton.stackView.centerXAnchor.constraint(
+                equalTo: layoutGuide.centerXAnchor
             ),
         ])
     }
