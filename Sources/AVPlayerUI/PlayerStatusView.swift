@@ -34,16 +34,7 @@ public class PlayerStatusView: UIView {
         
         return label
     }()
-    /**
-     Фон информационной метки.
-     */
-    private let infoBackground: UIBackgroundConfiguration = {
-        var background = UIBackgroundConfiguration.clear()
-        background.backgroundColor = .black
-        background.cornerRadius = 12.0
-
-        return background
-    }()
+    
     /**
      Признак отображения фона у информационной метки.
 
@@ -59,13 +50,50 @@ public class PlayerStatusView: UIView {
      без содержимого. Значение по умолчанию — `true`.
      */
     var showsLoadingIndicatorBackground = true
+    
+    /**
+     Направляющая области статуса для привязки метки.
 
+     Ограничения к направляющей активируются при добавлении
+     представления в иерархию: на момент инициализации
+     представление ещё не имеет общего предка
+     с владельцем направляющей.
+     */
+    private weak var statusLayoutGuide: UILayoutGuide?
+    
+    /**
+     Фон информационной метки.
+     */
+    private let infoBackground: UIBackgroundConfiguration = {
+        var background = UIBackgroundConfiguration.clear()
+        background.backgroundColor = .black
+        background.cornerRadius = 12.0
+
+        return background
+    }()
     
     public override init(frame: CGRect) {
         super.init(frame: frame)
         self.initialSetup()
     }
-    
+
+    /**
+     Создаёт представление статуса, привязанное к области статуса.
+
+     Привязка применяется при добавлении представления
+     в иерархию: верхний край информационной метки совпадает
+     с верхним краем направляющей, нижний край — не ниже
+     нижнего края направляющей. Низкоприоритетное
+     центрирование метки уступает привязке к направляющей.
+
+     - Parameter layoutGuide: Направляющая области статуса.
+     */
+    init(statusLayoutGuide layoutGuide: UILayoutGuide) {
+        super.init(frame: .zero)
+        self.statusLayoutGuide = layoutGuide
+        self.initialSetup()
+    }
+
     required public init?(coder: NSCoder) {
         super.init(coder: coder)
         self.initialSetup()
@@ -76,9 +104,13 @@ public class PlayerStatusView: UIView {
         
         self.infoLabel.translatesAutoresizingMaskIntoConstraints = false
         self.addSubview(self.infoLabel)
+        let centerYConstraint = self.infoLabel.centerYAnchor.constraint(
+            equalTo: self.centerYAnchor
+        )
+        centerYConstraint.priority = .defaultLow
         NSLayoutConstraint.activate([
             self.infoLabel.centerXAnchor.constraint(equalTo: self.centerXAnchor),
-            self.infoLabel.centerYAnchor.constraint(equalTo: self.centerYAnchor),
+            centerYConstraint,
             self.infoLabel.widthAnchor.constraint(
                 lessThanOrEqualTo: self.widthAnchor,
                 multiplier: 0.75
@@ -90,10 +122,24 @@ public class PlayerStatusView: UIView {
         ])
     }
     
+    public override func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        guard let statusLayoutGuide else { return }
+        
+        self.statusLayoutGuide = nil
+        NSLayoutConstraint.activate([
+            self.infoLabel.topAnchor.constraint(
+                equalTo: statusLayoutGuide.topAnchor
+            ),
+            self.infoLabel.bottomAnchor.constraint(
+                lessThanOrEqualTo: statusLayoutGuide.bottomAnchor
+            ),
+        ])
+    }
+    
     func startLoadingAnimation() {
-        self.infoLabel.background = self.showsLoadingIndicatorBackground
-            ? self.infoBackground
-            : nil
+        let showsBackground = self.showsLoadingIndicatorBackground
+        self.infoLabel.background = showsBackground ? self.infoBackground : nil
         self.infoLabel.startActivityAnimating()
     }
     
@@ -131,6 +177,6 @@ public class PlayerStatusView: UIView {
     func hideStatusInfo(animated: Bool = false) {
         self.infoLabel.hide(animated: animated)
     }
-    
-    
+
+
 }
