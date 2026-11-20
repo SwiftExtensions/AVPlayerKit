@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "git@github.com:SwiftExtensions/ActivityLabel.git",
       "state" : {
-        "revision" : "514f3ce44b9195e454666fcfefd7455622c24675",
-        "version" : "1.0.2"
+        "revision" : "e6c5f5be5ce34bb9a5b3368a3096a4926aba6b7e",
+        "version" : "1.1.0"
       }
     }
   ],
