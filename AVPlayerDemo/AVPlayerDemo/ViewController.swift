@@ -9,7 +9,7 @@ import AVKit
 import MediaPlayer
 import UIKit
 
-import AVPlayerKit
+import AVPlayerUI
 //import SFCore
 
 final class ViewController: PlayerViewController {

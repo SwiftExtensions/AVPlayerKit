@@ -25,13 +25,16 @@ dependencies: [
 ]
 ```
 
-и подключите продукт `AVPlayerKit` к целевой сборке:
+и подключите нужные продукты к целевой сборке:
+
+- `AVPlayerKit` — ядро: расширения `AVFoundation`, наблюдатели и валидаторы без зависимости от `UIKit`;
+- `AVPlayerUI` — UI-компоненты: `PlayerViewController`, `PlayerView`, `PlayerStatusView`, `PlayerControlsView` и др. Зависит от `AVPlayerKit` и реэкспортирует его, поэтому достаточно `import AVPlayerUI`.
 
 ```swift
 .target(
     name: "YourApp",
     dependencies: [
-        .product(name: "AVPlayerKit", package: "AVPlayerKit")
+        .product(name: "AVPlayerUI", package: "AVPlayerKit")
     ]
 )
 ```
@@ -41,7 +44,7 @@ dependencies: [
 ## Быстрый старт
 
 ```swift
-import AVPlayerKit
+import AVPlayerUI
 
 // Создаём контроллер плеера и привязываем к нему плеер с медиапотоком.
 let playerViewController = PlayerViewController()
@@ -127,7 +130,7 @@ deinit {
 ![Демонстрация AVRoutePickerView](Images/av-route-picker-view-demo.gif)
 
 ```swift
-import AVPlayerKit
+import AVPlayerUI
 
 let playerViewController = PlayerViewController()
 playerViewController.enableAirPlay()
@@ -138,7 +141,7 @@ playerViewController.enableAirPlay()
 ## Картинка в картинке (Picture-in-Picture)
 
 ```swift
-import AVPlayerKit
+import AVPlayerUI
 
 let playerViewController = PlayerViewController()
 playerViewController.enablePictureInPicture()
@@ -179,7 +182,7 @@ extension YourViewController: AVPictureInPictureControllerEventDelegate {
 
 ```swift
 import AVKit
-import AVPlayerKit
+import AVPlayerUI
 
 let pipController = AVPictureInPictureController(playerLayer: playerLayer)
 let delegateProxy = AVPictureInPictureControllerDelegateProxy()
@@ -223,7 +226,7 @@ delegateProxy.removeDelegate(self)
 
 ```swift
 import MediaPlayer
-import AVPlayerKit
+import AVPlayerUI
 
 var nowPlaying = NowPlayingInfoBuilder(title: "AVPlayer Demo", artist: "Bridge TV")
 nowPlaying.mediaType = .video
@@ -239,7 +242,7 @@ MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlaying.build()
 ## Дистанционное управление воспроизведением
 
 ```swift
-import AVPlayerKit
+import AVPlayerUI
 
 let player = AVPlayer(url: streamURL)
 let remoteCommandCenter = RemoteCommandCenter()
@@ -280,7 +283,7 @@ remoteCommandCenter.isEnabled = true
 
 ```swift
 import AVFoundation
-import AVPlayerKit
+import AVPlayerUI
 
 let streamURL = URL(string: "https://example.com/stream.m3u8")!
 let asset = AVAsset(url: streamURL)
@@ -325,7 +328,7 @@ task.cancel()
 
 ```swift
 import AVFoundation
-import AVPlayerKit
+import AVPlayerUI
 
 final class ChannelList: AVAssetStatusManageableItems {
     typealias Index = Int
@@ -402,7 +405,7 @@ let validator = AVAssetValidator(items: channels, timeout: settings.validationTi
 
 ```swift
 import AVFoundation
-import AVPlayerKit
+import AVPlayerUI
 
 final class PlaybackController: NSObject {
     let player = AVPlayer()

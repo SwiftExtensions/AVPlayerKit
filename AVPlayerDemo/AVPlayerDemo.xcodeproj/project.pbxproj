@@ -19,6 +19,8 @@
 		FF6598832EEB5AA8002DEA26 /* Constant.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6598822EEB5AA8002DEA26 /* Constant.swift */; };
 		FFAF5EC930AAF10C005ED5CB /* AVPlayerKit in Frameworks */ = {isa = PBXBuildFile; productRef = FFAF5EC830AAF10C005ED5CB /* AVPlayerKit */; };
 		FFAF5ECB30AAF122005ED5CB /* AVPlayerKit in Frameworks */ = {isa = PBXBuildFile; productRef = FFAF5ECA30AAF122005ED5CB /* AVPlayerKit */; };
+		FFBB000100000000000000BB /* AVPlayerUI in Frameworks */ = {isa = PBXBuildFile; productRef = FFAA000100000000000000AA /* AVPlayerUI */; };
+		FFBB000300000000000000BB /* AVPlayerUI in Frameworks */ = {isa = PBXBuildFile; productRef = FFAA000300000000000000AA /* AVPlayerUI */; };
 		FFD188662EEB52DE009AF0A8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FFD188622EEB52DE009AF0A8 /* Assets.xcassets */; };
 		FFD188672EEB52DE009AF0A8 /* AVPlayerAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD188632EEB52DE009AF0A8 /* AVPlayerAppApp.swift */; };
 		FFD188682EEB52DE009AF0A8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD188642EEB52DE009AF0A8 /* ContentView.swift */; };
@@ -50,6 +52,7 @@
 			files = (
 				FF2A963F2D8F403700E7CBE4 /* AVPlayerKit in Frameworks */,
 				FFAF5EC930AAF10C005ED5CB /* AVPlayerKit in Frameworks */,
+				FFBB000100000000000000BB /* AVPlayerUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -58,6 +61,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FFAF5ECB30AAF122005ED5CB /* AVPlayerKit in Frameworks */,
+				FFBB000300000000000000BB /* AVPlayerUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -137,6 +141,7 @@
 			packageProductDependencies = (
 				FF2A963E2D8F403700E7CBE4 /* AVPlayerKit */,
 				FFAF5EC830AAF10C005ED5CB /* AVPlayerKit */,
+				FFAA000100000000000000AA /* AVPlayerUI */,
 			);
 			productName = AVPlayerDemo;
 			productReference = 4E0EB99328B8FE08004036FA /* AVPlayerDemo.app */;
@@ -157,6 +162,7 @@
 			name = AVPlayerApp;
 			packageProductDependencies = (
 				FFAF5ECA30AAF122005ED5CB /* AVPlayerKit */,
+				FFAA000300000000000000AA /* AVPlayerUI */,
 			);
 			productName = AVPlayerApp;
 			productReference = FFD188572EEB52B5009AF0A8 /* AVPlayerApp.app */;
@@ -589,6 +595,15 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FFAF5EC730AAF10C005ED5CB /* XCLocalSwiftPackageReference "../../AVPlayerKit" */;
 			productName = AVPlayerKit;
+		};
+		FFAA000100000000000000AA /* AVPlayerUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AVPlayerUI;
+		};
+		FFAA000300000000000000AA /* AVPlayerUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FFAF5EC730AAF10C005ED5CB /* XCLocalSwiftPackageReference "../../AVPlayerKit" */;
+			productName = AVPlayerUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

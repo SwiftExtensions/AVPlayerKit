@@ -13,6 +13,9 @@ let package = Package(
         .library(
             name: "AVPlayerKit",
             targets: ["AVPlayerKit"]),
+        .library(
+            name: "AVPlayerUI",
+            targets: ["AVPlayerUI"]),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -21,9 +24,11 @@ let package = Package(
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
+        .target(name: "AVPlayerKit"),
         .target(
-            name: "AVPlayerKit",
+            name: "AVPlayerUI",
             dependencies: [
+                "AVPlayerKit",
                 .product(name: "ActivityLabel", package: "ActivityLabel"),
             ]),
         .testTarget(

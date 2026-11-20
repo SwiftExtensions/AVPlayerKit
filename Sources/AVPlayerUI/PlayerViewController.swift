@@ -4,6 +4,7 @@
 
 import UIKit
 import AVKit
+@_exported import AVPlayerKit
 
 /**
  Контроллер представления в качестве представления которого используется ``PlayerView``.

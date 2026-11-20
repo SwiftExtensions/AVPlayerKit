@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import AVPlayerKit
 
 /**
  Контроллер отображения статуса плеера.

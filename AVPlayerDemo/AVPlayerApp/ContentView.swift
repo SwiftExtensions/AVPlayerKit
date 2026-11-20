@@ -6,7 +6,7 @@
 //
 
 import AVFoundation
-import AVPlayerKit
+import AVPlayerUI
 import SwiftUI
 
 struct ContentView: View {

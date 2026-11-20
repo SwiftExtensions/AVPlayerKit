@@ -1,13 +1,13 @@
 {
-  "originHash" : "2e5a79e3c0922c5d8d75463e4e1c81976ddc5697b02e8002c75238d2a0ebb6a2",
+  "originHash" : "a22d87e4ccca9fe0c98f5fcf414058825f14ff94a08741d33688c578643955ec",
   "pins" : [
     {
       "identity" : "activitylabel",
       "kind" : "remoteSourceControl",
       "location" : "git@github.com:SwiftExtensions/ActivityLabel.git",
       "state" : {
-        "revision" : "514f3ce44b9195e454666fcfefd7455622c24675",
-        "version" : "1.0.2"
+        "revision" : "bba11dbfb3f8bbb7442176966d692d9dd8f70c40",
+        "version" : "1.1.1"
       }
     }
   ],
